@@ -110,6 +110,86 @@ function Stat({label,value}:{label:string;value:string|number}){return <div clas
 function Toolbar({search,onSearch,placeholder,filters}:{search:string;onSearch:(s:string)=>void;placeholder:string;filters?:React.ReactNode}){return <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between"><label className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2"><Search size={17} className="text-slate-400"/><input value={search} onChange={e=>onSearch(e.target.value)} placeholder={placeholder} className="min-w-0 bg-transparent text-sm outline-none sm:w-56"/></label><div className="flex flex-col gap-2 sm:flex-row">{filters}</div></div>}
 function Table({headers,children,empty,emptyText}:{headers:string[];children:React.ReactNode;empty:boolean;emptyText:string}){return <div className="overflow-x-auto"><table className="w-full min-w-[780px] text-left"><thead className="bg-slate-50"><tr className="text-xs uppercase tracking-wide text-slate-500">{headers.map(h=><th key={h} className="px-5 py-4 font-semibold">{h}</th>)}</tr></thead><tbody>{empty?<tr><td colSpan={headers.length} className="px-5 py-12 text-center"><Package className="mx-auto mb-3 text-slate-300" size={28}/><p className="text-sm font-medium text-slate-700">{emptyText}</p><p className="mt-1 text-xs text-slate-400">Try changing your search or filters.</p></td></tr>:children}</tbody></table></div>}
 export default function App(){return <BrowserRouter><Shell/></BrowserRouter>}
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
+import { ProtectedRoute } from './routes/ProtectedRoute'
+import { PublicHomePage } from './PublicHomePage'
+import { AccountSelectionPage } from './AccountSelectionPage'
+import {
+  CustomerDetailsPage,
+  CustomersPage,
+  DashboardPage,
+  DeveloperDashboardPage,
+  ForgotPasswordPage,
+  LoginPage,
+  ProfilePage,
+  RegisterPage,
+  ResetPasswordPage,
+  StaffPage,
+  WorkspaceLayout,
+  InitialPasswordChangePage,
+} from './views'
+import './App.css'
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<PublicHomePage />} />
+          <Route path="/account" element={<AccountSelectionPage />} />
+          <Route path="/login" element={<Navigate to="/account" replace />} />
+          <Route path="/register" element={<Navigate to="/customer/register" replace />} />
+          <Route path="/admin/login" element={<LoginPage portalRole="admin" />} />
+          <Route path="/customer/login" element={<LoginPage portalRole="customer" />} />
+          <Route path="/developer/login" element={<LoginPage portalRole="developer_team" />} />
+          <Route path="/customer/register" element={<RegisterPage />} />
+          <Route path="/admin/forgot-password" element={<ForgotPasswordPage portalRole="admin" />} />
+          <Route path="/customer/forgot-password" element={<ForgotPasswordPage portalRole="customer" />} />
+          <Route path="/admin/reset-password" element={<ResetPasswordPage portalRole="admin" />} />
+          <Route path="/customer/reset-password" element={<ResetPasswordPage portalRole="customer" />} />
+          <Route path="/developer/forgot-password" element={<ForgotPasswordPage portalRole="developer_team" />} />
+          <Route path="/developer/reset-password" element={<ResetPasswordPage portalRole="developer_team" />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route element={<ProtectedRoute roles={['admin']} />}>
+            <Route element={<WorkspaceLayout />}>
+              <Route path="/admin/dashboard" element={<DashboardPage />} />
+              <Route path="/admin/change-password" element={<InitialPasswordChangePage />} />
+            </Route>
+          </Route>
+          <Route element={<ProtectedRoute roles={['customer']} />}>
+            <Route element={<WorkspaceLayout />}>
+              <Route path="/customer/dashboard" element={<DashboardPage />} />
+            </Route>
+          </Route>
+          <Route element={<ProtectedRoute roles={['developer_team']} />}>
+            <Route element={<WorkspaceLayout />}>
+              <Route path="/developer/dashboard" element={<DeveloperDashboardPage />} />
+            </Route>
+          </Route>
+          <Route element={<ProtectedRoute roles={['admin', 'staff']} />}>
+            <Route element={<WorkspaceLayout />}>
+              <Route path="/dashboard" element={<DashboardPage />} />
+            </Route>
+          </Route>
+          <Route element={<ProtectedRoute roles={['admin']} />}>
+            <Route element={<WorkspaceLayout />}>
+              <Route path="/staff" element={<StaffPage />} />
+              <Route path="/customers" element={<CustomersPage />} />
+              <Route path="/customers/:customerId" element={<CustomerDetailsPage />} />
+            </Route>
+          </Route>
+          <Route element={<ProtectedRoute roles={['admin', 'staff', 'customer', 'developer_team']} />}>
+            <Route element={<WorkspaceLayout />}><Route path="/profile" element={<ProfilePage />} /></Route>
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+  )
+}
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

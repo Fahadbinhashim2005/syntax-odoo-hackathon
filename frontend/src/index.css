@@ -1,3 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
+  color: #26332f;
+  background: #f7f5f0;
 @import "tailwindcss";
 
 :root {
@@ -393,6 +399,29 @@ header.sticky { border-color: var(--color-border); background: rgba(245, 240, 23
 [class~="hover:bg-rose-50"]:hover, [class~="hover:bg-red-50"]:hover { background-color: #F7E3DF; }
   font-optical-sizing: auto;
   font-weight: 400;
+  --forest: #183630;
+  --forest-soft: #244b42;
+  --beige: #e3dac9;
+  --gold: #e5c690;
+  --ink: #26332f;
+  --muted: #78827c;
+  --line: #e9e6df;
+  --surface: #fff;
+  --canvas: #f7f5f0;
+  --success: #27845b;
+  --error: #c65353;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; min-height: 100vh; }
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 3px solid rgba(229, 198, 144, .75);
+  outline-offset: 2px;
+}
+::selection { color: var(--forest); background: var(--gold); }
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }

@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import Base, engine, SessionLocal
@@ -41,23 +43,27 @@ from app.api.invoices import router as invoices_router
 from app.api.payments import router as payments_router
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.dashboard import router as dashboard_router
+from sqlalchemy import inspect, text
 
-
-Base.metadata.create_all(bind=engine)
+from app.database import Base, SessionLocal, engine
+from app.models import User
+from app.routers import auth, dashboard, users
+from app.utils.initial_admin import seed_initial_admin
 
 app = FastAPI(
-    title="Brightloop Billing API",
-    description="Invoice, payment, and finance management API",
-    version="1.0.0",
+    title="Odoo Subscription Management API",
+    description="Authentication and User Management Module",
+    version="1.0.0"
 )
 
-app.include_router(invoices_router)
-app.include_router(payments_router)
-app.include_router(dashboard_router)
-
+origins = [
+    origin.strip()
+    for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
+    if origin.strip()
+]
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=origins,
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
@@ -65,10 +71,22 @@ app.add_middleware(
         "http://127.0.0.1:3000"
     ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
+app.include_router(auth.router)
+app.include_router(users.router)
+app.include_router(dashboard.router)
+
+
+@app.on_event("startup")
+def create_tables():
+    Base.metadata.create_all(bind=engine)
+    if "must_change_password" not in {column["name"] for column in inspect(engine).get_columns("users")}:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE users ADD COLUMN must_change_password BOOLEAN NOT NULL DEFAULT 0"))
+    seed_initial_admin(SessionLocal)
 # Include all routers
 app.include_router(auth.router)
 app.include_router(users.router)
@@ -88,16 +106,16 @@ def root():
     return {"status": "ok", "message": "Brightloop API is running"}
 
 @app.get("/")
-def root():
+def home():
     return {
-        "message": "Brightloop Billing API is running",
-        "status": "healthy",
+        "message": "Odoo Backend is running successfully!"
     }
 
 
-@app.get("/api/health")
+@app.get("/health")
 def health_check():
     return {
+        "status": "healthy"
         "status": "healthy",
         "service": "billing-api",
     }
