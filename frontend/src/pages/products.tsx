@@ -1,15 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Search,
   Plus,
   Package,
   Pencil,
-  Trash2,
+  Power,
   X,
   ChevronDown,
 } from "lucide-react";
 
-type ProductType = "Goods" | "Service";
+type ProductType = "Service" | "Consumable" | "Storable";
 type ProductStatus = "Active" | "Archived";
 
 type Product = {
@@ -54,7 +54,7 @@ const initialProducts: Product[] = [
     id: 4,
     name: "Wireless Keyboard",
     description: "Wireless office keyboard",
-    productType: "Goods",
+    productType: "Storable",
     salesPrice: 1299,
     costPrice: 800,
     status: "Archived",
@@ -77,7 +77,8 @@ const emptyForm = {
 };
 
 function Products() {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [products, setProducts] = useState<Product[]>(() => { try { const saved = localStorage.getItem("syntax-products-v1"); return saved ? JSON.parse(saved) as Product[] : initialProducts; } catch { return initialProducts; } });
+  useEffect(() => { localStorage.setItem("syntax-products-v1", JSON.stringify(products)); }, [products]);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -283,7 +284,8 @@ function Products() {
                   aria-label="Filter by product type"
                 >
                   <option value="All">All</option>
-                  <option value="Goods">Goods</option>
+                  <option value="Consumable">Consumable</option>
+                  <option value="Storable">Storable</option>
                   <option value="Service">Service</option>
                 </select>
 
@@ -381,10 +383,10 @@ function Products() {
                         <button
                           type="button"
                           onClick={() => deleteProduct(product)}
-                          aria-label={`Delete ${product.name}`}
+                          aria-label={`${product.status === "Active" ? "Deactivate" : "Reactivate"} ${product.name}`}
                           className="rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-600"
                         >
-                          <Trash2 size={17} />
+                          <Power size={17} />
                         </button>
                       </div>
                     </td>
@@ -492,7 +494,8 @@ function Products() {
                       }
                       className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-violet-500"
                     >
-                      <option value="Goods">Goods</option>
+                      <option value="Consumable">Consumable</option>
+                  <option value="Storable">Storable</option>
                       <option value="Service">Service</option>
                     </select>
                   </div>

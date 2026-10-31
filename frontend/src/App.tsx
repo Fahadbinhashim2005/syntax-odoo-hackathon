@@ -1,545 +1,112 @@
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
-import Products from "./pages/products";
+import { BrowserRouter, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard,
-  Package,
-  Layers3,
-  Percent,
-  Receipt,
-  Settings,
-  Search,
-  Bell,
-  Plus,
-  ArrowUpRight,
-  MoreHorizontal,
-  ChevronDown,
-  Box,
-  CircleDollarSign,
-  TrendingUp,
-  ShoppingBag,
+  LayoutDashboard, Package, Percent, Receipt, Box, Search, Plus,
+  Pencil, Power, Trash2, X, ShoppingBag, CircleDollarSign,
+  CheckCircle2, AlertCircle, ArrowUpRight, Menu
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import Products from "./pages/products";
 
-const products = [
-  {
-    id: 1,
-    name: "Basic Subscription",
-    category: "Subscription",
-    price: "₹499.00",
-    status: "Active",
-    color: "bg-blue-100 text-blue-700",
-  },
-  {
-    id: 2,
-    name: "Premium Package",
-    category: "Service",
-    price: "₹1,499.00",
-    status: "Active",
-    color: "bg-purple-100 text-purple-700",
-  },
-  {
-    id: 3,
-    name: "Enterprise Plan",
-    category: "Subscription",
-    price: "₹4,999.00",
-    status: "Active",
-    color: "bg-emerald-100 text-emerald-700",
-  },
-  {
-    id: 4,
-    name: "Support Add-on",
-    category: "Service",
-    price: "₹299.00",
-    status: "Archived",
-    color: "bg-orange-100 text-orange-700",
-  },
+type Plan = { id:number; name:string; productId:number; frequency:"Daily"|"Weekly"|"Monthly"|"Yearly"; price:number; minQuantity:number; from:string; to:string; active:boolean; description:string };
+type Discount = { id:number; name:string; type:"Percentage"|"Fixed"; value:number; appliesTo:"All"|"Product"|"Plan"; targetId:number|null; from:string; to:string; active:boolean };
+type Tax = { id:number; name:string; rate:number; active:boolean };
+type ProductOption = { id:number; name:string; active?:boolean; status?:string };
+const seedProducts:ProductOption[]=[{id:1,name:"Basic Subscription",active:true,status:"Active"},{id:2,name:"Premium Package",active:true,status:"Active"},{id:3,name:"Enterprise Plan",active:true,status:"Active"},{id:4,name:"Wireless Keyboard",active:false,status:"Archived"}];
+const seedPlans:Plan[]=[
+ {id:1,name:"Basic Monthly",productId:1,frequency:"Monthly",price:499,minQuantity:1,from:"",to:"",active:true,description:"Essential monthly subscription"},
+ {id:2,name:"Premium Annual",productId:2,frequency:"Yearly",price:14990,minQuantity:1,from:"",to:"",active:true,description:"Premium annual subscription"},
 ];
-
-const navigation = [
-  { label: "Dashboard", icon: LayoutDashboard },
-  { label: "Products", icon: Package },
-  { label: "Product Variants", icon: Layers3 },
-  { label: "Subscription Plans", icon: ShoppingBag },
-  { label: "Discounts", icon: Percent },
-  { label: "Tax Settings", icon: Receipt },
+const seedDiscounts:Discount[]=[
+ {id:1,name:"Welcome 10%",type:"Percentage",value:10,appliesTo:"All",targetId:null,from:"",to:"",active:true},
+ {id:2,name:"Launch Offer",type:"Fixed",value:250,appliesTo:"Product",targetId:1,from:"",to:"",active:true},
 ];
-
-function AppContent() {
-  const navigate = useNavigate();
-  return (
-    <div className="min-h-screen bg-[#f7f8fa] text-slate-800">
-      {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 border-r border-slate-200 bg-white lg:flex lg:flex-col">
-        <div className="flex h-16 items-center gap-3 border-b border-slate-100 px-6">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600 text-white">
-            <Box size={21} />
-          </div>
-
-          <div>
-            <h1 className="text-base font-bold tracking-tight">
-              Syntax Odoo
-            </h1>
-            <p className="text-xs text-slate-500">Subscription Manager</p>
-          </div>
-        </div>
-
-        <div className="px-4 pt-7">
-          <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Workspace
-          </p>
-
-          <nav className="space-y-1">
-  {navigation.map((item) => {
-    const Icon = item.icon;
-    const active = item.label === "Dashboard";
-
-    return (
-      <button
-        key={item.label}
-        type="button"
-        onClick={() => {
-          if (item.label === "Dashboard") {
-            navigate("/");
-          } else if (item.label === "Products") {
-            navigate("/products");
-          }
-        }}
-        className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${
-          active
-            ? "bg-violet-50 font-semibold text-violet-700"
-            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-        }`}
-      >
-        <Icon size={19} />
-        <span>{item.label}</span>
-      </button>
-    );
-  })}
-</nav>
-        </div>
-
-        <div className="mt-auto border-t border-slate-100 p-4">
-          <button
-            type="button"
-            className="flex w-full items-center gap-3 rounded-lg p-2 text-left hover:bg-slate-50"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-100 font-semibold text-violet-700">
-              M2
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold">Product Manager</p>
-              <p className="text-xs text-slate-500">Member 2</p>
-            </div>
-
-            <Settings size={17} className="text-slate-400" />
-          </button>
-        </div>
-      </aside>
-
-      {/* Main content */}
-      <div className="lg:pl-64">
-        {/* Top header */}
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-5 sm:px-8">
-          <div>
-            <p className="text-xs text-slate-500">
-              Workspace / Product Management
-            </p>
-            <h2 className="text-sm font-semibold">Overview</h2>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              aria-label="Notifications"
-              className="relative rounded-lg p-2 text-slate-500 hover:bg-slate-100"
-            >
-              <Bell size={19} />
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
-            </button>
-
-            <div className="hidden h-8 w-px bg-slate-200 sm:block" />
-
-            <button
-              type="button"
-              className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-slate-50"
-            >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-xs font-bold">
-                FA
-              </div>
-              <span className="hidden text-sm font-medium sm:block">
-                Admin
-              </span>
-              <ChevronDown size={15} className="text-slate-400" />
-            </button>
-          </div>
-        </header>
-
-        <main className="mx-auto max-w-[1600px] p-5 sm:p-8">
-          {/* Page title */}
-          <section className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                Product Dashboard
-              </h1>
-              <p className="mt-1 text-sm text-slate-500">
-                Manage your products, subscription plans and pricing.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700"
-              onClick={() => alert("Add Product form will be implemented next.")}
-            >
-              <Plus size={18} />
-              Add Product
-            </button>
-          </section>
-
-          {/* Summary cards */}
-          <section className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard
-              title="Total Products"
-              value="24"
-              subtitle="Products in catalogue"
-              change="+4 this month"
-              icon={Package}
-              iconStyle="bg-violet-50 text-violet-600"
-            />
-
-            <StatCard
-              title="Active Plans"
-              value="12"
-              subtitle="Available subscription plans"
-              change="+2 this month"
-              icon={Layers3}
-              iconStyle="bg-blue-50 text-blue-600"
-            />
-
-            <StatCard
-              title="Active Discounts"
-              value="5"
-              subtitle="Currently configured"
-              change="2 expiring soon"
-              icon={Percent}
-              iconStyle="bg-emerald-50 text-emerald-600"
-            />
-
-            <StatCard
-              title="Catalogue Value"
-              value="₹48,500"
-              subtitle="Illustrative product value"
-              change="View catalogue"
-              icon={CircleDollarSign}
-              iconStyle="bg-orange-50 text-orange-600"
-            />
-          </section>
-
-          {/* Secondary information */}
-          <section className="mb-8 grid grid-cols-1 gap-5 xl:grid-cols-3">
-            <div className="rounded-xl border border-slate-200 bg-white p-6 xl:col-span-2">
-              <div className="mb-6 flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold text-slate-900">
-                    Catalogue Overview
-                  </h3>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Summary of your product catalogue.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  aria-label="More catalogue options"
-                  className="rounded-lg p-2 text-slate-400 hover:bg-slate-50"
-                >
-                  <MoreHorizontal size={20} />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div className="rounded-lg bg-slate-50 p-4">
-                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-violet-100 text-violet-700">
-                    <Package size={18} />
-                  </div>
-                  <p className="text-sm text-slate-500">Products</p>
-                  <p className="mt-1 text-xl font-bold">24</p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Goods and services
-                  </p>
-                </div>
-
-                <div className="rounded-lg bg-slate-50 p-4">
-                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
-                    <Layers3 size={18} />
-                  </div>
-                  <p className="text-sm text-slate-500">Variants</p>
-                  <p className="mt-1 text-xl font-bold">18</p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Configured variations
-                  </p>
-                </div>
-
-                <div className="rounded-lg bg-slate-50 p-4">
-                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
-                    <TrendingUp size={18} />
-                  </div>
-                  <p className="text-sm text-slate-500">Plans</p>
-                  <p className="mt-1 text-xl font-bold">12</p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Active billing plans
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-slate-200 bg-white p-6">
-              <div className="mb-5 flex items-center justify-between">
-                <h3 className="font-semibold text-slate-900">
-                  Quick Actions
-                </h3>
-                <ArrowUpRight size={18} className="text-slate-400" />
-              </div>
-
-              <div className="space-y-3">
-                <QuickAction
-                  icon={Package}
-                  title="Create a product"
-                  description="Add a new catalogue item"
-                />
-
-                <QuickAction
-                  icon={ShoppingBag}
-                  title="Create a plan"
-                  description="Configure subscription pricing"
-                />
-
-                <QuickAction
-                  icon={Percent}
-                  title="Add a discount"
-                  description="Set up promotional pricing"
-                />
-
-                <QuickAction
-                  icon={Receipt}
-                  title="Configure taxes"
-                  description="Manage tax rates"
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* Products table */}
-          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-            <div className="flex flex-col gap-4 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h3 className="font-semibold text-slate-900">
-                  Recent Products
-                </h3>
-                <p className="mt-1 text-sm text-slate-500">
-                  A quick look at your catalogue.
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <label className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2">
-                  <Search size={17} className="text-slate-400" />
-                  <input
-                    type="search"
-                    placeholder="Search products..."
-                    className="w-full bg-transparent text-sm outline-none sm:w-44"
-                    aria-label="Search products"
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium hover:bg-slate-50"
-                >
-                  All products
-                  <ChevronDown size={15} />
-                </button>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[650px] text-left">
-                <thead className="bg-slate-50">
-                  <tr className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    <th className="px-6 py-4">Product</th>
-                    <th className="px-6 py-4">Category</th>
-                    <th className="px-6 py-4">Sales Price</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-
-                <tbody className="divide-y divide-slate-100">
-                  {products.map((product) => (
-                    <tr
-                      key={product.id}
-                      className="transition hover:bg-slate-50/70"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`flex h-10 w-10 items-center justify-center rounded-lg ${product.color}`}
-                          >
-                            <Package size={19} />
-                          </div>
-
-                          <div>
-                            <p className="text-sm font-semibold text-slate-800">
-                              {product.name}
-                            </p>
-                            <p className="mt-1 text-xs text-slate-400">
-                              PRD-{String(product.id).padStart(3, "0")}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="px-6 py-4 text-sm text-slate-600">
-                        {product.category}
-                      </td>
-
-                      <td className="px-6 py-4 text-sm font-semibold text-slate-800">
-                        {product.price}
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                            product.status === "Active"
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "bg-slate-100 text-slate-600"
-                          }`}
-                        >
-                          {product.status}
-                        </span>
-                      </td>
-
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          type="button"
-                          aria-label={`More actions for ${product.name}`}
-                          className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                        >
-                          <MoreHorizontal size={19} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="flex flex-col gap-3 border-t border-slate-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-slate-500">
-                Showing 4 sample products
-              </p>
-
-              <button
-                type="button"
-                className="text-sm font-semibold text-violet-700 hover:text-violet-900"
-              >
-                View all products →
-              </button>
-            </div>
-          </section>
-
-          <p className="mt-6 text-center text-xs text-slate-400">
-            Syntax Odoo · Product, Plan & Discount Management
-          </p>
-        </main>
-      </div>
-    </div>
-  );
+const seedTaxes:Tax[]=[{id:1,name:"GST",rate:18,active:true}];
+function readStore<T,>(key:string, fallback:T):T { try { const value=localStorage.getItem(key); return value?JSON.parse(value) as T:fallback; } catch { return fallback; } }
+function useStoredState<T,>(key:string, initial:T) {
+ const [value,setValue]=useState<T>(()=>readStore(key,initial));
+ useEffect(()=>{localStorage.setItem(key,JSON.stringify(value));},[key,value]);
+ return [value,setValue] as const;
 }
-
-type StatCardProps = {
-  title: string;
-  value: string;
-  subtitle: string;
-  change: string;
-  icon: typeof Package;
-  iconStyle: string;
-};
-
-function StatCard({
-  title,
-  value,
-  subtitle,
-  change,
-  icon: Icon,
-  iconStyle,
-}: StatCardProps) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 transition hover:shadow-sm">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-slate-500">{title}</p>
-          <p className="mt-3 text-2xl font-bold tracking-tight text-slate-900">
-            {value}
-          </p>
-        </div>
-
-        <div
-          className={`flex h-11 w-11 items-center justify-center rounded-xl ${iconStyle}`}
-        >
-          <Icon size={22} />
-        </div>
-      </div>
-
-      <p className="mt-2 text-xs text-slate-500">{subtitle}</p>
-
-      <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-emerald-700">
-        <TrendingUp size={14} />
-        {change}
-      </div>
-    </div>
-  );
+const money=(n:number)=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:2}).format(n);
+const navItems=[
+ {label:"Dashboard",to:"/",icon:LayoutDashboard},
+ {label:"Products",to:"/products",icon:Package},
+ {label:"Subscription Plans",to:"/plans",icon:ShoppingBag},
+ {label:"Discounts",to:"/discounts",icon:Percent},
+ {label:"Tax Settings",to:"/taxes",icon:Receipt},
+];
+function Shell(){
+ const location=useLocation(); const [mobileOpen,setMobileOpen]=useState(false);
+ const title=navItems.find(n=>n.to===location.pathname)?.label??"Catalogue";
+ return <div className="min-h-screen bg-[#f7f8fa] text-slate-800">
+  <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-slate-200 bg-white lg:flex lg:flex-col">
+   <Brand/>
+   <div className="px-4 pt-7"><p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Workspace</p><nav className="space-y-1">{navItems.map(item=>{const Icon=item.icon;return <NavLink key={item.to} to={item.to} end={item.to==="/"} className={({isActive})=>`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${isActive?"bg-violet-50 font-semibold text-violet-700":"text-slate-600 hover:bg-slate-50"}`}><Icon size={19}/>{item.label}</NavLink>})}</nav></div>
+   <div className="mt-auto border-t border-slate-100 p-5"><p className="text-xs text-slate-400">Brightloop · Team Syntax</p><p className="mt-1 text-xs text-slate-500">Catalogue & Pricing</p></div>
+  </aside>
+  {mobileOpen&&<div className="fixed inset-0 z-40 bg-slate-900/30 lg:hidden" onClick={()=>setMobileOpen(false)}><div className="h-full w-72 bg-white" onClick={e=>e.stopPropagation()}><Brand/><nav className="space-y-1 p-4">{navItems.map(item=>{const Icon=item.icon;return <NavLink onClick={()=>setMobileOpen(false)} key={item.to} to={item.to} end={item.to==="/"} className={({isActive})=>`flex items-center gap-3 rounded-lg px-3 py-3 text-sm ${isActive?"bg-violet-50 font-semibold text-violet-700":"text-slate-600"}`}><Icon size={19}/>{item.label}</NavLink>})}</nav></div></div>}
+  <div className="lg:pl-64"><header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-5 backdrop-blur sm:px-8"><div className="flex items-center gap-3"><button className="rounded-lg p-2 hover:bg-slate-100 lg:hidden" onClick={()=>setMobileOpen(true)} aria-label="Open navigation"><Menu size={20}/></button><span className="text-sm text-slate-500">Workspace /</span><span className="text-sm font-semibold text-slate-800">{title}</span></div><div className="flex items-center gap-3"><span className="hidden text-sm text-slate-500 sm:inline">Admin workspace</span><div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-100 text-sm font-bold text-violet-700">AD</div></div></header>
+   <main className="mx-auto max-w-[1440px] p-5 sm:p-8"><Routes><Route path="/" element={<Dashboard/>}/><Route path="/products" element={<Products/>}/><Route path="/plans" element={<PlansPage/>}/><Route path="/discounts" element={<DiscountsPage/>}/><Route path="/taxes" element={<TaxesPage/>}/><Route path="*" element={<Dashboard/>}/></Routes></main>
+   <footer className="mt-10 border-t border-slate-200 pt-5 text-xs text-slate-400">Syntax Odoo · Product Catalogue & Pricing <span className="float-right">Demo data is stored in this browser</span></footer>
+  </div></div>
+; 
 }
-
-type QuickActionProps = {
-  icon: typeof Package;
-  title: string;
-  description: string;
-};
-
-function QuickAction({
-  icon: Icon,
-  title,
-  description,
-}: QuickActionProps) {
-  return (
-    <button
-      type="button"
-      className="flex w-full items-center gap-3 rounded-lg border border-slate-100 p-3 text-left transition hover:border-violet-200 hover:bg-violet-50/50"
-    >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
-        <Icon size={19} />
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-slate-800">{title}</p>
-        <p className="mt-1 text-xs text-slate-500">{description}</p>
-      </div>
-
-      <ArrowUpRight size={16} className="shrink-0 text-slate-400" />
-    </button>
-  );
+function Brand(){return <div className="flex h-16 items-center gap-3 border-b border-slate-100 px-6"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600 text-white"><Box size={21}/></div><div><h1 className="text-base font-bold tracking-tight">Syntax Odoo</h1><p className="text-xs text-slate-500">Subscription Manager</p></div></div>}
+function Dashboard(){
+ const [plans]=useStoredState<Plan[]>("syntax-plans-v1",seedPlans); const [discounts]=useStoredState<Discount[]>("syntax-discounts-v1",seedDiscounts); const [taxes]=useStoredState<Tax[]>("syntax-taxes-v1",seedTaxes);
+ const products=readStore<ProductOption[]>("syntax-products-v1",seedProducts);
+ const activeProducts=products.filter(p=>p.active!==false&&p.status!=="Archived").length;
+ return <><div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="mb-2 text-xs font-medium uppercase tracking-wider text-violet-700">Catalogue workspace</p><h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Product Catalogue & Pricing</h1><p className="mt-2 text-sm text-slate-500">Manage products, subscription plans, discounts, and tax rules in one place.</p></div><span className="inline-flex w-fit items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700"><CheckCircle2 size={14}/> Workspace ready</span></div>
+ <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">{[{label:"Products",value:products.length,sub:`${activeProducts} active`,icon:Package},{label:"Subscription plans",value:plans.length,sub:`${plans.filter(p=>p.active).length} active`,icon:ShoppingBag},{label:"Active discounts",value:discounts.filter(d=>d.active).length,sub:"Pricing promotions",icon:Percent},{label:"Active tax rules",value:taxes.filter(t=>t.active).length,sub:"Configured rates",icon:Receipt}].map(c=>{const Icon=c.icon;return <div key={c.label} className="rounded-xl border border-slate-200 bg-white p-5"><div className="flex items-center justify-between"><span className="text-sm text-slate-500">{c.label}</span><span className="rounded-lg bg-violet-50 p-2 text-violet-700"><Icon size={18}/></span></div><p className="mt-4 text-3xl font-bold text-slate-900">{c.value}</p><p className="mt-1 text-xs text-slate-400">{c.sub}</p></div>})}</div>
+ <div className="mt-6 grid gap-6 xl:grid-cols-[1.25fr_0.75fr]"><section className="rounded-xl border border-slate-200 bg-white p-6"><h2 className="font-semibold text-slate-900">Manage your catalogue</h2><p className="mt-1 text-sm text-slate-500">Jump directly to a module to create or update your pricing data.</p><div className="mt-5 grid gap-3 sm:grid-cols-2">{navItems.filter(n=>n.to!=="/").map(item=>{const Icon=item.icon;return <button key={item.to} onClick={()=>location.href=item.to} className="flex items-start gap-3 rounded-xl border border-slate-200 p-4 text-left transition hover:border-violet-200 hover:bg-violet-50/50"><span className="rounded-lg bg-violet-100 p-2 text-violet-700"><Icon size={19}/></span><span><span className="block text-sm font-semibold">{item.label}</span><span className="mt-1 block text-xs leading-5 text-slate-500">{item.to==="/products"?"Manage product types, prices and active status":item.to==="/plans"?"Set billing frequency and plan prices":item.to==="/discounts"?"Configure fixed and percentage offers":"Maintain tax rates and activation"}</span></span><ArrowUpRight size={16} className="ml-auto text-slate-400"/></button>})}</div></section>
+ <section className="rounded-xl border border-slate-200 bg-white p-6"><div className="flex items-center gap-2"><CircleDollarSign size={19} className="text-violet-700"/><h2 className="font-semibold text-slate-900">Pricing calculation</h2></div><p className="mt-2 text-sm leading-6 text-slate-500">Use the same calculation order when integrating this catalogue with quotations and invoices.</p><ol className="mt-5 space-y-3 text-sm">{["Subtotal = unit price × quantity","Apply eligible discount (capped at subtotal)","Taxable amount = subtotal − discount","Tax = taxable amount × tax rate","Total = taxable amount + tax"].map((t,i)=><li key={t} className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-50 text-xs font-bold text-violet-700">{i+1}</span><span className="pt-0.5 text-slate-700">{t}</span></li>)}</ol><div className="mt-5 flex gap-2 rounded-lg bg-amber-50 p-3 text-xs leading-5 text-amber-800"><AlertCircle size={16} className="shrink-0"/><span>This branch currently contains frontend source only. Backend persistence and server-side permission checks still need API integration.</span></div></section></div>
+ </>;
 }
-
-function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<AppContent />} />
-        <Route path="/products" element={<Products />} />
-      </Routes>
-    </BrowserRouter>
-  );
+function PageHeader({eyebrow,title,description,onAdd,addLabel}:{eyebrow:string;title:string;description:string;onAdd:()=>void;addLabel:string}){return <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="mb-2 text-xs font-medium uppercase tracking-wider text-violet-700">{eyebrow}</p><h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">{title}</h1><p className="mt-2 text-sm text-slate-500">{description}</p></div><button onClick={onAdd} className="inline-flex w-fit items-center gap-2 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700"><Plus size={17}/>{addLabel}</button></div>}
+function Field({label,children}:{label:string;children:React.ReactNode}){return <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span>{children}</label>}
+const inputClass="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100";
+function Modal({title,onClose,children}:{title:string;onClose:()=>void;children:React.ReactNode}){return <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4" onMouseDown={onClose}><div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-xl" onMouseDown={e=>e.stopPropagation()}><div className="flex items-center justify-between border-b border-slate-100 px-6 py-4"><h2 className="font-semibold text-slate-900">{title}</h2><button onClick={onClose} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Close dialog"><X size={18}/></button></div><div className="p-6">{children}</div></div></div>}
+function StatusPill({active}:{active:boolean}){return <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${active?"bg-emerald-50 text-emerald-700":"bg-slate-100 text-slate-600"}`}>{active?"Active":"Inactive"}</span>}
+function ActionButtons({onEdit,onToggle,active,onDelete}:{onEdit:()=>void;onToggle:()=>void;active:boolean;onDelete?:()=>void}){return <div className="flex justify-end gap-1"><button title="Edit" aria-label="Edit" onClick={onEdit} className="rounded-lg p-2 text-slate-500 hover:bg-violet-50 hover:text-violet-700"><Pencil size={16}/></button><button title={active?"Deactivate":"Reactivate"} aria-label={active?"Deactivate":"Reactivate"} onClick={onToggle} className="rounded-lg p-2 text-slate-500 hover:bg-amber-50 hover:text-amber-700"><Power size={16}/></button>{onDelete&&<button title="Delete" aria-label="Delete" onClick={onDelete} className="rounded-lg p-2 text-slate-500 hover:bg-rose-50 hover:text-rose-700"><Trash2 size={16}/></button>}</div>}
+function PlansPage(){
+ const [plans,setPlans]=useStoredState<Plan[]>("syntax-plans-v1",seedPlans); const [products]=useStoredState<ProductOption[]>("syntax-products-v1",seedProducts); const [search,setSearch]=useState(""); const [frequency,setFrequency]=useState("All"); const [activeFilter,setActiveFilter]=useState("All"); const [editing,setEditing]=useState<Plan|null>(null); const [planModalOpen,setPlanModalOpen]=useState(false); const [error,setError]=useState("");
+ const activeProducts=products.filter(p=>p.active!==false&&p.status!=="Archived");
+ const [form,setForm]=useState<Omit<Plan,"id">>({name:"",productId:0,frequency:"Monthly",price:0,minQuantity:1,from:"",to:"",active:true,description:""});
+ const filtered=useMemo(()=>plans.filter(p=>(p.name.toLowerCase().includes(search.toLowerCase()))&&(frequency==="All"||p.frequency===frequency)&&(activeFilter==="All"||(activeFilter==="Active"?p.active:!p.active))),[plans,search,frequency,activeFilter]);
+ function open(p?:Plan){setEditing(p??null);setPlanModalOpen(true);setForm(p?{name:p.name,productId:p.productId,frequency:p.frequency,price:p.price,minQuantity:p.minQuantity,from:p.from,to:p.to,active:p.active,description:p.description}:{name:"",productId:activeProducts[0]?.id??0,frequency:"Monthly",price:0,minQuantity:1,from:"",to:"",active:true,description:""});setError("");}
+ function save(e:React.FormEvent){e.preventDefault();if(!form.name.trim()){setError("Plan name is required.");return}if(!activeProducts.some(p=>p.id===Number(form.productId))){setError("Select an active product. Create a product first if the list is empty.");return}if(!Number.isFinite(Number(form.price))||Number(form.price)<0||!Number.isInteger(Number(form.minQuantity))||Number(form.minQuantity)<1){setError("Price must be non-negative and minimum quantity must be at least 1.");return}if(form.from&&form.to&&form.from>form.to){setError("Availability end date must be on or after the start date.");return}const row={...form,productId:Number(form.productId),price:Number(form.price),minQuantity:Number(form.minQuantity),name:form.name.trim()};setPlans(prev=>editing?prev.map(p=>p.id===editing.id?{...p,...row}:p):[...prev,{...row,id:Math.max(0,...prev.map(p=>p.id))+1}]);setEditing(null);setPlanModalOpen(false)}
+ const productName=(id:number)=>products.find(p=>p.id===id)?.name??`Product #${id}`;
+ return <><PageHeader eyebrow="Catalogue / Billing" title="Subscription Plans" description="Configure recurring plans, billing periods, prices, and availability." onAdd={()=>open()} addLabel="Create plan"/><div className="mb-5 grid gap-3 sm:grid-cols-3"><Stat label="Total plans" value={plans.length}/><Stat label="Active plans" value={plans.filter(p=>p.active).length}/><Stat label="Billing frequencies" value={new Set(plans.map(p=>p.frequency)).size}/></div><div className="overflow-hidden rounded-xl border border-slate-200 bg-white"><Toolbar search={search} onSearch={setSearch} placeholder="Search plans..." filters={<><select className={inputClass+" sm:w-auto"} value={frequency} onChange={e=>setFrequency(e.target.value)}><option>All</option>{["Daily","Weekly","Monthly","Yearly"].map(x=><option key={x}>{x}</option>)}</select><select className={inputClass+" sm:w-auto"} value={activeFilter} onChange={e=>setActiveFilter(e.target.value)}><option>All</option><option>Active</option><option>Inactive</option></select></>}/><Table headers={["Plan","Product","Billing","Price","Min. qty","Availability","Status","Actions"]} empty={!filtered.length} emptyText="No plans match these filters."><>{filtered.map(p=><tr key={p.id} className="border-t border-slate-100 hover:bg-slate-50"><td className="px-5 py-4"><p className="font-semibold text-slate-800">{p.name}</p><p className="mt-1 max-w-xs truncate text-xs text-slate-500">{p.description||"No description"}</p></td><td className="px-5 py-4 text-sm">{productName(p.productId)}</td><td className="px-5 py-4 text-sm">{p.frequency}</td><td className="px-5 py-4 text-sm font-semibold">{money(p.price)}</td><td className="px-5 py-4 text-sm">{p.minQuantity}</td><td className="px-5 py-4 text-xs text-slate-500">{p.from||"Any"} – {p.to||"No end"}</td><td className="px-5 py-4"><StatusPill active={p.active}/></td><td className="px-5 py-4"><ActionButtons onEdit={()=>open(p)} active={p.active} onToggle={()=>setPlans(old=>old.map(x=>x.id===p.id?{...x,active:!x.active}:x))}/></td></tr>)}</></Table></div>
+ {editing!==null||(!editing&&form.name!=="" )?null:null}
+ {/** Modal is driven by an explicit form-open sentinel below. */}
+ <PlanModal key={editing?.id??"new"} openState={editing} form={form} setForm={setForm} error={error} onClose={()=>{setPlanModalOpen(false);setEditing(null);setError("");setForm({name:"",productId:0,frequency:"Monthly",price:0,minQuantity:1,from:"",to:"",active:true,description:""});}} onSave={save} products={activeProducts} isOpen={planModalOpen}/>
+ </>;
 }
-
-export default App;
+function PlanModal({openState,form,setForm,error,onClose,onSave,products,isOpen}:{openState:Plan|null;form:Omit<Plan,"id">;setForm:React.Dispatch<React.SetStateAction<Omit<Plan,"id">>>;error:string;onClose:()=>void;onSave:(e:React.FormEvent)=>void;products:ProductOption[];isOpen:boolean}){
+ // The create action is represented by the form name sentinel.
+ const visible=isOpen||openState!==null;
+ if(!visible)return null;
+ return <Modal title={openState?"Edit subscription plan":"Create subscription plan"} onClose={onClose}><form onSubmit={onSave} className="space-y-4"><div className="grid gap-4 sm:grid-cols-2"><Field label="Plan name *"><input required className={inputClass} value={form.name==="__new__"?"":form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="e.g. Premium Monthly"/></Field><Field label="Product *"><select className={inputClass} required value={form.productId} onChange={e=>setForm({...form,productId:Number(e.target.value)})}><option value={0}>Select product</option>{products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></Field><Field label="Billing frequency *"><select className={inputClass} value={form.frequency} onChange={e=>setForm({...form,frequency:e.target.value as Plan["frequency"]})}>{["Daily","Weekly","Monthly","Yearly"].map(x=><option key={x}>{x}</option>)}</select></Field><Field label="Price (₹) *"><input type="number" min="0" step="0.01" required className={inputClass} value={form.price} onChange={e=>setForm({...form,price:Number(e.target.value)})}/></Field><Field label="Minimum quantity *"><input type="number" min="1" step="1" required className={inputClass} value={form.minQuantity} onChange={e=>setForm({...form,minQuantity:Number(e.target.value)})}/></Field><Field label="Available from"><input type="date" className={inputClass} value={form.from} onChange={e=>setForm({...form,from:e.target.value})}/></Field><Field label="Available until"><input type="date" className={inputClass} value={form.to} onChange={e=>setForm({...form,to:e.target.value})}/></Field><Field label="Status"><select className={inputClass} value={form.active?"Active":"Inactive"} onChange={e=>setForm({...form,active:e.target.value==="Active"})}><option>Active</option><option>Inactive</option></select></Field></div><Field label="Description"><textarea className={inputClass} rows={3} value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></Field>{error&&<p className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}<div className="flex justify-end gap-3 border-t border-slate-100 pt-4"><button type="button" onClick={onClose} className="rounded-lg border border-slate-200 px-4 py-2 text-sm">Cancel</button><button className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white">Save plan</button></div></form></Modal>;
+}
+function DiscountsPage(){
+ const [discounts,setDiscounts]=useStoredState<Discount[]>("syntax-discounts-v1",seedDiscounts);const [products]=useStoredState<ProductOption[]>("syntax-products-v1",seedProducts);const [plans]=useStoredState<Plan[]>("syntax-plans-v1",seedPlans);const [search,setSearch]=useState("");const [editing,setEditing]=useState<Discount|null>(null);const [open,setOpen]=useState(false);const [error,setError]=useState("");const [form,setForm]=useState<Omit<Discount,"id">>({name:"",type:"Percentage",value:10,appliesTo:"All",targetId:null,from:"",to:"",active:true});
+ const filtered=discounts.filter(d=>d.name.toLowerCase().includes(search.toLowerCase()));function start(d?:Discount){setEditing(d??null);setForm(d?{name:d.name,type:d.type,value:d.value,appliesTo:d.appliesTo,targetId:d.targetId,from:d.from,to:d.to,active:d.active}:{name:"",type:"Percentage",value:10,appliesTo:"All",targetId:null,from:"",to:"",active:true});setError("");setOpen(true)}
+ function save(e:React.FormEvent){e.preventDefault();if(!form.name.trim()){setError("Discount name is required.");return}if(!Number.isFinite(Number(form.value))||Number(form.value)<=0||(form.type==="Percentage"&&Number(form.value)>100)){setError(form.type==="Percentage"?"Percentage must be greater than 0 and no more than 100.":"Fixed discount must be greater than 0.");return}if(form.appliesTo!=="All"&&!form.targetId){setError("Choose a product or plan for this discount.");return}if(form.appliesTo==="Product"&&!products.some(p=>p.id===form.targetId)){setError("Selected product was not found.");return}if(form.appliesTo==="Plan"&&!plans.some(p=>p.id===form.targetId)){setError("Selected plan was not found.");return}if(form.from&&form.to&&form.from>form.to){setError("End date must be on or after start date.");return}const row={...form,name:form.name.trim(),value:Number(form.value)};setDiscounts(old=>editing?old.map(d=>d.id===editing.id?{...d,...row}:d):[...old,{...row,id:Math.max(0,...old.map(d=>d.id))+1}]);setOpen(false)}
+ const targetName=(d:Discount)=>d.appliesTo==="All"?"All products and plans":d.appliesTo==="Product"?(products.find(p=>p.id===d.targetId)?.name??"Missing product"):(plans.find(p=>p.id===d.targetId)?.name??"Missing plan");
+ return <><PageHeader eyebrow="Catalogue / Promotions" title="Discounts" description="Define promotional rules by percentage or fixed amount and choose where they apply." onAdd={()=>start()} addLabel="Add discount"/><div className="mb-5 grid gap-3 sm:grid-cols-3"><Stat label="Total discounts" value={discounts.length}/><Stat label="Active discounts" value={discounts.filter(d=>d.active).length}/><Stat label="Percentage discounts" value={discounts.filter(d=>d.type==="Percentage").length}/></div><div className="overflow-hidden rounded-xl border border-slate-200 bg-white"><Toolbar search={search} onSearch={setSearch} placeholder="Search discounts..."/><Table headers={["Discount","Type","Value","Applies to","Validity","Status","Actions"]} empty={!filtered.length} emptyText="No discounts found."><>{filtered.map(d=><tr key={d.id} className="border-t border-slate-100 hover:bg-slate-50"><td className="px-5 py-4 font-semibold">{d.name}</td><td className="px-5 py-4 text-sm">{d.type}</td><td className="px-5 py-4 text-sm font-semibold">{d.type==="Percentage"?`${d.value}%`:money(d.value)}</td><td className="px-5 py-4 text-sm">{targetName(d)}</td><td className="px-5 py-4 text-xs text-slate-500">{d.from||"Any date"} – {d.to||"No end"}</td><td className="px-5 py-4"><StatusPill active={d.active}/></td><td className="px-5 py-4"><ActionButtons onEdit={()=>start(d)} active={d.active} onToggle={()=>setDiscounts(old=>old.map(x=>x.id===d.id?{...x,active:!x.active}:x))}/></td></tr>)}</>)</Table></div>
+ {open&&<Modal title={editing?"Edit discount":"Create discount"} onClose={()=>setOpen(false)}><form onSubmit={save} className="space-y-4"><div className="grid gap-4 sm:grid-cols-2"><Field label="Discount name *"><input required className={inputClass} value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></Field><Field label="Discount type *"><select className={inputClass} value={form.type} onChange={e=>setForm({...form,type:e.target.value as Discount["type"],value:e.target.value==="Percentage"?10:100})}><option>Percentage</option><option>Fixed</option></select></Field><Field label={form.type==="Percentage"?"Percentage (%) *":"Fixed amount (₹) *"}><input required type="number" min="0.01" max={form.type==="Percentage"?100:undefined} step="0.01" className={inputClass} value={form.value} onChange={e=>setForm({...form,value:Number(e.target.value)})}/></Field><Field label="Applies to *"><select className={inputClass} value={form.appliesTo} onChange={e=>setForm({...form,appliesTo:e.target.value as Discount["appliesTo"],targetId:null})}><option>All</option><option>Product</option><option>Plan</option></select></Field>{form.appliesTo!=="All"&&<Field label={`Select ${form.appliesTo.toLowerCase()} *`}><select required className={inputClass} value={form.targetId??""} onChange={e=>setForm({...form,targetId:Number(e.target.value)||null})}><option value="">Select {form.appliesTo.toLowerCase()}</option>{(form.appliesTo==="Product"?products:plans).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></Field>}<Field label="Valid from"><input type="date" className={inputClass} value={form.from} onChange={e=>setForm({...form,from:e.target.value})}/></Field><Field label="Valid until"><input type="date" className={inputClass} value={form.to} onChange={e=>setForm({...form,to:e.target.value})}/></Field><Field label="Status"><select className={inputClass} value={form.active?"Active":"Inactive"} onChange={e=>setForm({...form,active:e.target.value==="Active"})}><option>Active</option><option>Inactive</option></select></Field></div>{error&&<p className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}<div className="rounded-lg bg-violet-50 p-3 text-xs leading-5 text-violet-800">Discounts should be capped at the eligible subtotal. This screen stores rules; applying discounts to quotations requires backend pricing integration.</div><div className="flex justify-end gap-3 border-t border-slate-100 pt-4"><button type="button" onClick={()=>setOpen(false)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm">Cancel</button><button className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white">Save discount</button></div></form></Modal>}</>;
+}
+function TaxesPage(){
+ const [taxes,setTaxes]=useStoredState<Tax[]>("syntax-taxes-v1",seedTaxes);const [search,setSearch]=useState("");const [editing,setEditing]=useState<Tax|null>(null);const [open,setOpen]=useState(false);const [error,setError]=useState("");const [form,setForm]=useState({name:"",rate:18,active:true});
+ function start(t?:Tax){setEditing(t??null);setForm(t?{name:t.name,rate:t.rate,active:t.active}:{name:"",rate:18,active:true});setError("");setOpen(true)}
+ function save(e:React.FormEvent){e.preventDefault();if(!form.name.trim()){setError("Tax name is required.");return}if(!Number.isFinite(Number(form.rate))||Number(form.rate)<0||Number(form.rate)>100){setError("Tax rate must be between 0 and 100.");return}const row={name:form.name.trim(),rate:Number(form.rate),active:form.active};setTaxes(old=>editing?old.map(t=>t.id===editing.id?{...t,...row}:t):[...old,{...row,id:Math.max(0,...old.map(t=>t.id))+1}]);setOpen(false)}
+ const filtered=taxes.filter(t=>t.name.toLowerCase().includes(search.toLowerCase()));
+ return <><PageHeader eyebrow="Catalogue / Tax configuration" title="Tax Settings" description="Manage tax rates used in pricing calculations and downstream billing." onAdd={()=>start()} addLabel="Add tax rate"/><div className="mb-5 grid gap-3 sm:grid-cols-3"><Stat label="Tax rules" value={taxes.length}/><Stat label="Active tax rules" value={taxes.filter(t=>t.active).length}/><Stat label="Highest configured rate" value={`${Math.max(0,...taxes.map(t=>t.rate))}%`}/></div><div className="grid gap-6 xl:grid-cols-[1fr_0.75fr]"><div className="overflow-hidden rounded-xl border border-slate-200 bg-white"><Toolbar search={search} onSearch={setSearch} placeholder="Search tax rates..."/><Table headers={["Tax name","Rate","Status","Actions"]} empty={!filtered.length} emptyText="No tax rules found."><>{filtered.map(t=><tr key={t.id} className="border-t border-slate-100 hover:bg-slate-50"><td className="px-5 py-4 font-semibold">{t.name}</td><td className="px-5 py-4 text-sm font-semibold">{t.rate}%</td><td className="px-5 py-4"><StatusPill active={t.active}/></td><td className="px-5 py-4"><ActionButtons onEdit={()=>start(t)} active={t.active} onToggle={()=>setTaxes(old=>old.map(x=>x.id===t.id?{...x,active:!x.active}:x))}/></td></tr>)}</>)</Table></div><TaxCalculator taxes={taxes}/></div>
+ {open&&<Modal title={editing?"Edit tax rate":"Create tax rate"} onClose={()=>setOpen(false)}><form onSubmit={save} className="space-y-4"><Field label="Tax name *"><input required className={inputClass} placeholder="e.g. GST" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></Field><Field label="Tax percentage (0–100) *"><input type="number" min="0" max="100" step="0.01" required className={inputClass} value={form.rate} onChange={e=>setForm({...form,rate:Number(e.target.value)})}/></Field><Field label="Status"><select className={inputClass} value={form.active?"Active":"Inactive"} onChange={e=>setForm({...form,active:e.target.value==="Active"})}><option>Active</option><option>Inactive</option></select></Field>{error&&<p className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}<div className="flex justify-end gap-3 border-t border-slate-100 pt-4"><button type="button" onClick={()=>setOpen(false)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm">Cancel</button><button className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white">Save tax rate</button></div></form></Modal>}</>;
+}
+function TaxCalculator({taxes}:{taxes:Tax[]}){const [subtotal,setSubtotal]=useState("1000");const [discount,setDiscount]=useState("100");const [taxId,setTaxId]=useState(String(taxes.find(t=>t.active)?.id??""));const selected=taxes.find(t=>String(t.id)===taxId&&t.active);const amount=Math.max(0,Number(subtotal)||0);const discountAmount=Math.min(amount,Math.max(0,Number(discount)||0));const taxable=amount-discountAmount;const tax=taxable*(selected?.rate??0)/100;return <section className="h-fit rounded-xl border border-slate-200 bg-white p-6"><div className="flex items-center gap-2"><CircleDollarSign size={19} className="text-violet-700"/><h2 className="font-semibold">Tax calculator preview</h2></div><p className="mt-1 text-sm text-slate-500">Preview calculation order with a selected active tax rule.</p><div className="mt-5 space-y-4"><Field label="Subtotal (₹)"><input className={inputClass} type="number" min="0" value={subtotal} onChange={e=>setSubtotal(e.target.value)}/></Field><Field label="Discount (₹)"><input className={inputClass} type="number" min="0" value={discount} onChange={e=>setDiscount(e.target.value)}/></Field><Field label="Tax rule"><select className={inputClass} value={taxId} onChange={e=>setTaxId(e.target.value)}><option value="">No tax</option>{taxes.filter(t=>t.active).map(t=><option key={t.id} value={t.id}>{t.name} ({t.rate}%)</option>)}</select></Field></div><div className="mt-5 space-y-3 border-t border-slate-100 pt-4 text-sm"><Line label="Subtotal" value={money(amount)}/><Line label="Discount applied" value={`− ${money(discountAmount)}`}/><Line label="Taxable amount" value={money(taxable)}/><Line label={`Tax${selected?` (${selected.rate}%)`:""}`} value={money(tax)}/><div className="flex items-center justify-between rounded-lg bg-violet-50 p-3 text-base font-bold text-violet-900"><span>Total</span><span>{money(taxable+tax)}</span></div></div><p className="mt-3 text-xs leading-5 text-slate-400">Preview only; the backend must be the authoritative source for final invoice totals and rounding.</p></section>}
+function Line({label,value}:{label:string;value:string}){return <div className="flex items-center justify-between text-slate-600"><span>{label}</span><span className="font-medium text-slate-800">{value}</span></div>}
+function Stat({label,value}:{label:string;value:string|number}){return <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-sm text-slate-500">{label}</p><p className="mt-2 text-2xl font-bold text-slate-900">{value}</p></div>}
+function Toolbar({search,onSearch,placeholder,filters}:{search:string;onSearch:(s:string)=>void;placeholder:string;filters?:React.ReactNode}){return <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between"><label className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2"><Search size={17} className="text-slate-400"/><input value={search} onChange={e=>onSearch(e.target.value)} placeholder={placeholder} className="min-w-0 bg-transparent text-sm outline-none sm:w-56"/></label><div className="flex flex-col gap-2 sm:flex-row">{filters}</div></div>}
+function Table({headers,children,empty,emptyText}:{headers:string[];children:React.ReactNode;empty:boolean;emptyText:string}){return <div className="overflow-x-auto"><table className="w-full min-w-[780px] text-left"><thead className="bg-slate-50"><tr className="text-xs uppercase tracking-wide text-slate-500">{headers.map(h=><th key={h} className="px-5 py-4 font-semibold">{h}</th>)}</tr></thead><tbody>{empty?<tr><td colSpan={headers.length} className="px-5 py-12 text-center"><Package className="mx-auto mb-3 text-slate-300" size={28}/><p className="text-sm font-medium text-slate-700">{emptyText}</p><p className="mt-1 text-xs text-slate-400">Try changing your search or filters.</p></td></tr>:children}</tbody></table></div>}
+export default function App(){return <BrowserRouter><Shell/></BrowserRouter>}
