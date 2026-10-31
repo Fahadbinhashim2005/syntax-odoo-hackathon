@@ -1,4 +1,5 @@
-
+import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import Products from "./pages/products";
 import {
   LayoutDashboard,
   Package,
@@ -62,7 +63,8 @@ const navigation = [
   { label: "Tax Settings", icon: Receipt },
 ];
 
-function App() {
+function AppContent() {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-[#f7f8fa] text-slate-800">
       {/* Sidebar */}
@@ -86,26 +88,33 @@ function App() {
           </p>
 
           <nav className="space-y-1">
-            {navigation.map((item, index) => {
-              const Icon = item.icon;
-              const active = index === 0;
+  {navigation.map((item) => {
+    const Icon = item.icon;
+    const active = item.label === "Dashboard";
 
-              return (
-                <button
-                  key={item.label}
-                  type="button"
-                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${
-                    active
-                      ? "bg-violet-50 font-semibold text-violet-700"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
-                >
-                  <Icon size={19} />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
+    return (
+      <button
+        key={item.label}
+        type="button"
+        onClick={() => {
+          if (item.label === "Dashboard") {
+            navigate("/");
+          } else if (item.label === "Products") {
+            navigate("/products");
+          }
+        }}
+        className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${
+          active
+            ? "bg-violet-50 font-semibold text-violet-700"
+            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+        }`}
+      >
+        <Icon size={19} />
+        <span>{item.label}</span>
+      </button>
+    );
+  })}
+</nav>
         </div>
 
         <div className="mt-auto border-t border-slate-100 p-4">
@@ -519,6 +528,17 @@ function QuickAction({
 
       <ArrowUpRight size={16} className="shrink-0 text-slate-400" />
     </button>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<AppContent />} />
+        <Route path="/products" element={<Products />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
