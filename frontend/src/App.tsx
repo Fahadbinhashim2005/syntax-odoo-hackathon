@@ -38,7 +38,7 @@ const navItems=[
 function Shell(){
  const location=useLocation(); const [mobileOpen,setMobileOpen]=useState(false);
  const title=navItems.find(n=>n.to===location.pathname)?.label??"Catalogue";
- return <div className="min-h-screen bg-[#f7f8fa] text-slate-800">
+ return <div className="min-h-screen bg-[#E3DAC9] text-slate-800">
   <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-slate-200 bg-white lg:flex lg:flex-col">
    <Brand/>
    <div className="px-4 pt-7"><p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Workspace</p><nav className="space-y-1">{navItems.map(item=>{const Icon=item.icon;return <NavLink key={item.to} to={item.to} end={item.to==="/"} className={({isActive})=>`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${isActive?"bg-violet-50 font-semibold text-violet-700":"text-slate-600 hover:bg-slate-50"}`}><Icon size={19}/>{item.label}</NavLink>})}</nav></div>
