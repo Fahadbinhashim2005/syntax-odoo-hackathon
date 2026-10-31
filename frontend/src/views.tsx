@@ -115,11 +115,21 @@ export function LoginPage({ portalRole }: { portalRole?: 'admin' | 'customer' } 
   const successMessage = (location.state as { message?: string } | null)?.message
 
   useEffect(() => {
-    if (user) {
-      const destination = user.must_change_password ? '/admin/change-password' : user.role === 'admin' ? '/admin/dashboard' : user.role === 'customer' ? '/customer/dashboard' : '/dashboard'
-      navigate(destination, { replace: true })
+    if (!user) return
+
+    if (portalRole && user.role !== portalRole) {
+      const ownPortal = user.role === 'admin'
+        ? user.must_change_password ? '/admin/change-password' : '/admin/dashboard'
+        : user.role === 'customer' ? '/customer/dashboard' : '/dashboard'
+      navigate(ownPortal, { replace: true })
+      return
     }
-  }, [navigate, user])
+
+    const destination = user.role === 'admin'
+      ? user.must_change_password ? '/admin/change-password' : '/admin/dashboard'
+      : user.role === 'customer' ? '/customer/dashboard' : '/dashboard'
+    navigate(destination, { replace: true })
+  }, [navigate, portalRole, user])
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
