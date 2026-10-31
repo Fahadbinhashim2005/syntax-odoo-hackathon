@@ -18,3 +18,4 @@ class SubscriptionHistory(Base):
 
     subscription = relationship("Subscription", back_populates="history")
     user = relationship("User")
+

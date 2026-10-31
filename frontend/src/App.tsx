@@ -1,85 +1,114 @@
-import { Component, lazy, Suspense } from 'react'
-import type { ErrorInfo, ReactNode } from 'react'
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
 
-// Keep the app entry point lightweight. The Member 3 workspace contains the
-// feature UI and its charting code, so load it as a separate bundle.
-const Member3Workspace = lazy(() => import('./features/member3/Member3Workspace'))
+// Layout & Route Guards
+import { Layout } from './components/layout/Layout';
+import { ProtectedRoute } from './components/layout/ProtectedRoute';
 
-type ErrorBoundaryProps = {
-  children: ReactNode
-}
+// Member 1: Auth & User Management
+import { LoginPage } from './pages/auth/LoginPage';
+import { RegisterPage } from './pages/auth/RegisterPage';
+import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
+import { StaffManagementPage } from './pages/auth/StaffManagementPage';
+import { CustomerListPage } from './pages/auth/CustomerListPage';
+import { CustomerProfilePage } from './pages/auth/CustomerProfilePage';
+import { AccountSettingsPage } from './pages/auth/AccountSettingsPage';
 
-type ErrorBoundaryState = {
-  hasError: boolean
-}
+// Member 2: Catalogue & Pricing
+import { ProductListPage } from './pages/catalogue/ProductListPage';
+import { AddEditProductPage } from './pages/catalogue/AddEditProductPage';
+import { PlanListPage } from './pages/catalogue/PlanListPage';
+import { AddEditPlanPage } from './pages/catalogue/AddEditPlanPage';
+import { DiscountManagementPage } from './pages/catalogue/DiscountManagementPage';
+import { TaxSettingsPage } from './pages/catalogue/TaxSettingsPage';
 
-class AppErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  state: ErrorBoundaryState = { hasError: false }
+// Member 3: Quotations & Subscriptions
+import { QuotationListPage } from './pages/subscriptions/QuotationListPage';
+import { CreateQuotationPage } from './pages/subscriptions/CreateQuotationPage';
+import { QuotationDetailPage } from './pages/subscriptions/QuotationDetailPage';
+import { SubscriptionListPage } from './pages/subscriptions/SubscriptionListPage';
+import { SubscriptionDetailPage } from './pages/subscriptions/SubscriptionDetailPage';
+import { CustomerMySubscriptionsPage } from './pages/subscriptions/CustomerMySubscriptionsPage';
 
-  static getDerivedStateFromError(): ErrorBoundaryState {
-    return { hasError: true }
-  }
+// Member 4: Finance & Invoicing
+import { FinanceDashboardPage } from './pages/finance/FinanceDashboardPage';
+import { InvoiceListPage } from './pages/finance/InvoiceListPage';
+import { InvoiceDetailPage } from './pages/finance/InvoiceDetailPage';
+import { PaymentListPage } from './pages/finance/PaymentListPage';
+import { OverdueInvoicesPage } from './pages/finance/OverdueInvoicesPage';
+import { RevenueReportPage } from './pages/finance/RevenueReportPage';
+import { CustomerMyInvoicesPage } from './pages/finance/CustomerMyInvoicesPage';
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
-    // Keep this visible during development; connect to error monitoring later.
-    console.error('Member 3 workspace failed to render.', error, info.componentStack)
-  }
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 2, // 2 minutes
+      retry: 1,
+    },
+  },
+});
 
-  render() {
-    if (this.state.hasError) {
-      return (
-        <main className="grid min-h-screen place-items-center bg-slate-50 px-6 py-12">
-          <section
-            className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm"
-            aria-labelledby="workspace-error-title"
-          >
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-rose-50 text-xl text-rose-600">
-              !
-            </div>
-            <h1 id="workspace-error-title" className="mt-4 text-lg font-bold text-slate-900">
-              Workspace couldn't load
-            </h1>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              Something went wrong while opening the Member 3 workspace. Reload the page to try again.
-            </p>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="mt-6 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2"
-            >
-              Reload workspace
-            </button>
-          </section>
-        </main>
-      )
-    }
-
-    return this.props.children
-  }
-}
-
-function AppLoading() {
+export default function App() {
   return (
-    <main className="grid min-h-screen place-items-center bg-slate-50 px-6" role="status" aria-live="polite">
-      <div className="flex flex-col items-center gap-3">
-        <span
-          aria-hidden="true"
-          className="h-9 w-9 animate-spin rounded-full border-4 border-violet-100 border-t-violet-600"
-        />
-        <p className="text-sm font-medium text-slate-600">Preparing your workspace...</p>
-      </div>
-    </main>
-  )
-}
+    <QueryClientProvider client={queryClient}>
+      <Toaster position="top-right" richColors closeButton />
+      <BrowserRouter>
+        <Routes>
+          {/* Public Authentication Pages */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-function App() {
-  return (
-    <AppErrorBoundary>
-      <Suspense fallback={<AppLoading />}>
-        <Member3Workspace />
-      </Suspense>
-    </AppErrorBoundary>
-  )
-}
+          {/* Protected Application Wrapper */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<Layout />}>
+              {/* Root redirect */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<FinanceDashboardPage />} />
 
-export default App
+              {/* Member 1: Staff & Customer Management */}
+              <Route path="/staff" element={<StaffManagementPage />} />
+              <Route path="/customers" element={<CustomerListPage />} />
+              <Route path="/customers/:id" element={<CustomerProfilePage />} />
+              <Route path="/settings" element={<AccountSettingsPage />} />
+
+              {/* Member 2: Products & Catalogue */}
+              <Route path="/products" element={<ProductListPage />} />
+              <Route path="/products/new" element={<AddEditProductPage />} />
+              <Route path="/products/:id" element={<AddEditProductPage />} />
+              <Route path="/plans" element={<PlanListPage />} />
+              <Route path="/plans/new" element={<AddEditPlanPage />} />
+              <Route path="/plans/:id" element={<AddEditPlanPage />} />
+              <Route path="/discounts" element={<DiscountManagementPage />} />
+              <Route path="/taxes" element={<TaxSettingsPage />} />
+
+              {/* Member 3: Quotations & Subscriptions */}
+              <Route path="/quotations" element={<QuotationListPage />} />
+              <Route path="/quotations/new" element={<CreateQuotationPage />} />
+              <Route path="/quotations/:id" element={<QuotationDetailPage />} />
+              <Route path="/subscriptions" element={<SubscriptionListPage />} />
+              <Route path="/subscriptions/:id" element={<SubscriptionDetailPage />} />
+              <Route path="/my-subscriptions" element={<CustomerMySubscriptionsPage />} />
+
+              {/* Member 4: Finance, Invoices & Reports */}
+              <Route path="/invoices" element={<InvoiceListPage />} />
+              <Route path="/invoices/overdue" element={<OverdueInvoicesPage />} />
+              <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
+              <Route path="/payments" element={<PaymentListPage />} />
+              <Route path="/reports/revenue" element={<RevenueReportPage />} />
+              <Route path="/my-invoices" element={<CustomerMyInvoicesPage />} />
+            </Route>
+          </Route>
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
+  );
+}
