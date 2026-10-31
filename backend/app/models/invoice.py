@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 from sqlalchemy import Date, DateTime, ForeignKey, Integer, Numeric, String
@@ -39,7 +39,7 @@ class Invoice(Base):
     )
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False
+        DateTime, default=lambda: datetime.now(UTC), nullable=False
     )
 
     items: Mapped[list["InvoiceItem"]] = relationship(

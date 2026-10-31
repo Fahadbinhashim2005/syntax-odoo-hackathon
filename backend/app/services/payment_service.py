@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal, ROUND_HALF_UP
 
 from sqlalchemy.orm import Session
@@ -69,7 +69,7 @@ def record_payment(
         amount=amount,
         payment_method=payment_method,
         transaction_reference=transaction_reference,
-        payment_date=datetime.utcnow(),
+        payment_date=datetime.now(UTC),
         status="completed",
     )
 

@@ -1,5 +1,5 @@
 from datetime import date
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -10,51 +10,75 @@ from app.models import Invoice, Payment
 router = APIRouter(prefix="/api/dashboard", tags=["Finance Dashboard"])
 
 
+def money(value: Decimal) -> Decimal:
+    """Round monetary values to two decimal places."""
+    return value.quantize(
+        Decimal("0.01"),
+        rounding=ROUND_HALF_UP,
+    )
+
+
 @router.get("/finance")
 def get_finance_dashboard(db: Session = Depends(get_db)):
-    # Total revenue from successfully completed payments
-    total_revenue = (
+    # Total revenue from successfully completed payments.
+    completed_payments = (
         db.query(Payment)
         .filter(Payment.status == "completed")
         .all()
     )
 
-    revenue = sum(
-        (payment.amount for payment in total_revenue),
-        Decimal("0.00"),
+    revenue = money(
+        sum(
+            (payment.amount for payment in completed_payments),
+            Decimal("0.00"),
+        )
     )
 
     # Consider confirmed and partially paid invoices active.
     active_invoices = (
         db.query(Invoice)
-        .filter(Invoice.status.in_(["confirmed", "partially_paid"]))
+        .filter(
+            Invoice.status.in_(["confirmed", "partially_paid"])
+        )
         .all()
     )
 
-    total_outstanding = sum(
-        (invoice.outstanding_amount for invoice in active_invoices),
-        Decimal("0.00"),
+    total_outstanding = money(
+        sum(
+            (
+                invoice.outstanding_amount
+                for invoice in active_invoices
+            ),
+            Decimal("0.00"),
+        )
     )
 
-    # Invoice counts
+    # Total invoice count, including drafts and cancelled invoices.
     total_invoice_count = db.query(Invoice).count()
 
+    # Count invoices that have been fully paid.
     paid_invoice_count = (
         db.query(Invoice)
         .filter(Invoice.status == "paid")
         .count()
     )
 
-    # Overdue invoices: active invoices past their due date
+    # Find active invoices whose due dates have passed.
     overdue_invoices = [
         invoice
         for invoice in active_invoices
         if invoice.due_date < date.today()
+        and invoice.outstanding_amount > Decimal("0.00")
     ]
 
-    overdue_amount = sum(
-        (invoice.outstanding_amount for invoice in overdue_invoices),
-        Decimal("0.00"),
+    overdue_amount = money(
+        sum(
+            (
+                invoice.outstanding_amount
+                for invoice in overdue_invoices
+            ),
+            Decimal("0.00"),
+        )
     )
 
     return {
