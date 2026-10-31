@@ -36,3 +36,17 @@ class User(Base):
         if value not in {"admin", "staff", "customer", "developer_team"}:
             raise ValueError("Unsupported account role.")
         return value
+from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from datetime import datetime
+from app.database import Base
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    role = Column(String, default="staff")  # "admin", "staff", "customer"
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
