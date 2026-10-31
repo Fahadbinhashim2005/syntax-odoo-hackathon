@@ -21,7 +21,9 @@
 .visual-caption { display: flex; gap: 9px; align-items: center; color: rgba(255,255,255,.86); font-size: 12px; }
 .visual-caption svg { color: var(--gold); }
 .auth-visual-footer { color: rgba(255,255,255,.48); font-size: 11px; letter-spacing: .5px; }
-.auth-main { display: grid; place-items: center; padding: 48px 32px; }
+.auth-main { position: relative; display: grid; place-items: center; padding: 48px 32px; }
+.auth-home-link { position: absolute; top: 28px; right: 32px; display: inline-flex; align-items: center; gap: 7px; color: var(--forest); font-size: 13px; font-weight: 700; text-decoration: none; }
+.auth-home-link:hover { color: var(--gold); }
 .auth-form-container { width: min(100%, 410px); }
 .auth-mobile-brand { display: none; margin-bottom: 48px; }
 .auth-form-container > .eyebrow { margin-bottom: 10px; }
@@ -239,6 +241,7 @@ tbody tr:hover { background: #fdfcf9; }
   .auth-page { grid-template-columns: 1fr; }
   .auth-visual { display: none; }
   .auth-main { min-height: 100vh; padding: 31px 22px; }
+  .auth-home-link { top: 18px; right: 22px; }
   .auth-form-container { max-width: 430px; }
   .auth-mobile-brand { display: block; margin-bottom: 48px; }
   .auth-form-container h2 { font-size: 30px; }

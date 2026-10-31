@@ -7,6 +7,7 @@ import {
   CustomerDetailsPage,
   CustomersPage,
   DashboardPage,
+  DeveloperDashboardPage,
   ForgotPasswordPage,
   LoginPage,
   ProfilePage,
@@ -29,11 +30,14 @@ function App() {
           <Route path="/register" element={<Navigate to="/customer/register" replace />} />
           <Route path="/admin/login" element={<LoginPage portalRole="admin" />} />
           <Route path="/customer/login" element={<LoginPage portalRole="customer" />} />
+          <Route path="/developer/login" element={<LoginPage portalRole="developer_team" />} />
           <Route path="/customer/register" element={<RegisterPage />} />
           <Route path="/admin/forgot-password" element={<ForgotPasswordPage portalRole="admin" />} />
           <Route path="/customer/forgot-password" element={<ForgotPasswordPage portalRole="customer" />} />
           <Route path="/admin/reset-password" element={<ResetPasswordPage portalRole="admin" />} />
           <Route path="/customer/reset-password" element={<ResetPasswordPage portalRole="customer" />} />
+          <Route path="/developer/forgot-password" element={<ForgotPasswordPage portalRole="developer_team" />} />
+          <Route path="/developer/reset-password" element={<ResetPasswordPage portalRole="developer_team" />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route element={<ProtectedRoute roles={['admin']} />}>
@@ -47,15 +51,24 @@ function App() {
               <Route path="/customer/dashboard" element={<DashboardPage />} />
             </Route>
           </Route>
+          <Route element={<ProtectedRoute roles={['developer_team']} />}>
+            <Route element={<WorkspaceLayout />}>
+              <Route path="/developer/dashboard" element={<DeveloperDashboardPage />} />
+            </Route>
+          </Route>
           <Route element={<ProtectedRoute roles={['admin', 'staff']} />}>
             <Route element={<WorkspaceLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
+            </Route>
+          </Route>
+          <Route element={<ProtectedRoute roles={['admin']} />}>
+            <Route element={<WorkspaceLayout />}>
               <Route path="/staff" element={<StaffPage />} />
               <Route path="/customers" element={<CustomersPage />} />
               <Route path="/customers/:customerId" element={<CustomerDetailsPage />} />
             </Route>
           </Route>
-          <Route element={<ProtectedRoute roles={['admin', 'staff', 'customer']} />}>
+          <Route element={<ProtectedRoute roles={['admin', 'staff', 'customer', 'developer_team']} />}>
             <Route element={<WorkspaceLayout />}><Route path="/profile" element={<ProfilePage />} /></Route>
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

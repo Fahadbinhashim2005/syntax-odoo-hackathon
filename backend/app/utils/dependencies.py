@@ -32,6 +32,8 @@ def get_current_user(
     user = db.get(User, user_id)
     if user is None or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="This account is unavailable.")
+    if user.role not in {"admin", "staff", "customer", "developer_team"}:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This account has no valid access role.")
     password_change_request = request.url.path == "/api/auth/change-password" and request.method == "POST"
     profile_bootstrap_request = request.url.path == "/api/users/me" and request.method == "GET"
     if user.must_change_password and not (password_change_request or profile_bootstrap_request):

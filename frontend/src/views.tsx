@@ -12,6 +12,7 @@ import {
   ChevronDown,
   CircleHelp,
   ClipboardList,
+  Code2,
   Eye,
   EyeOff,
   LayoutDashboard,
@@ -90,6 +91,7 @@ function AuthFrame({ children, title, subtitle }: { children: ReactNode; title: 
         </div>
       </aside>
       <section className="auth-main">
+        <Link to="/" className="auth-home-link">Back to home <ArrowLeft size={15} /></Link>
         <div className="auth-form-container">
           <div className="auth-mobile-brand"><Brand /></div>
           <span className="eyebrow">WELCOME TO BRIGHTLOOP</span>
@@ -103,31 +105,33 @@ function AuthFrame({ children, title, subtitle }: { children: ReactNode; title: 
   )
 }
 
-export function LoginPage({ portalRole }: { portalRole?: 'admin' | 'customer' } = {}) {
+function portalPath(role: 'admin' | 'customer' | 'developer_team', page: 'login' | 'forgot-password' | 'reset-password') {
+  const portal = role === 'developer_team' ? 'developer' : role
+  return `/${portal}/${page}`
+}
+
+export function LoginPage({ portalRole }: { portalRole?: 'admin' | 'customer' | 'developer_team' } = {}) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const { signIn, user } = useAuth()
+  const { signIn, signOut, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const successMessage = (location.state as { message?: string } | null)?.message
+  const portalNotice = user && portalRole && user.role !== portalRole
+    ? `You are signed in as ${roleLabel(user.role)}. Sign out to continue with ${portalRole === 'admin' ? 'Admin' : portalRole === 'customer' ? 'Customer' : 'Developer Team'} Login.`
+    : ''
 
   useEffect(() => {
     if (!user) return
 
-    if (portalRole && user.role !== portalRole) {
-      const ownPortal = user.role === 'admin'
-        ? user.must_change_password ? '/admin/change-password' : '/admin/dashboard'
-        : user.role === 'customer' ? '/customer/dashboard' : '/dashboard'
-      navigate(ownPortal, { replace: true })
-      return
-    }
+    if (portalRole && user.role !== portalRole) return
 
     const destination = user.role === 'admin'
       ? user.must_change_password ? '/admin/change-password' : '/admin/dashboard'
-      : user.role === 'customer' ? '/customer/dashboard' : '/dashboard'
+      : user.role === 'customer' ? '/customer/dashboard' : user.role === 'developer_team' ? '/developer/dashboard' : '/dashboard'
     navigate(destination, { replace: true })
   }, [navigate, portalRole, user])
 
@@ -138,11 +142,11 @@ export function LoginPage({ portalRole }: { portalRole?: 'admin' | 'customer' } 
     try {
       const { data } = await api.post('/auth/login', { email, password })
       if (portalRole && data.user.role !== portalRole) {
-        setError(portalRole === 'admin' ? 'This account does not have administrator access.' : 'This account is not a customer account. Use the appropriate portal.')
+        setError(`This account does not have ${portalRole === 'developer_team' ? 'Developer Team' : portalRole} portal access.`)
         return
       }
       signIn(data, remember)
-      const destination = data.user.must_change_password ? '/admin/change-password' : data.user.role === 'admin' ? '/admin/dashboard' : data.user.role === 'customer' ? '/customer/dashboard' : '/dashboard'
+      const destination = data.user.must_change_password ? '/admin/change-password' : data.user.role === 'admin' ? '/admin/dashboard' : data.user.role === 'customer' ? '/customer/dashboard' : data.user.role === 'developer_team' ? '/developer/dashboard' : '/dashboard'
       navigate(destination, { replace: true })
     } catch (requestError) {
       setError(getApiError(requestError))
@@ -154,6 +158,7 @@ export function LoginPage({ portalRole }: { portalRole?: 'admin' | 'customer' } 
   return (
     <AuthFrame title="Welcome back" subtitle="Sign in to your account to continue.">
       {successMessage && <Notice kind="success">{successMessage}</Notice>}
+      {portalNotice && <Notice>{portalNotice} <button className="text-link" type="button" onClick={signOut}>Sign out</button></Notice>}
       {error && <Notice>{error}</Notice>}
       <form className="auth-form" onSubmit={submit}>
         <label className="field">
@@ -163,11 +168,11 @@ export function LoginPage({ portalRole }: { portalRole?: 'admin' | 'customer' } 
         <PasswordInput label="Password" value={password} onChange={setPassword} autoComplete="current-password" />
         <div className="form-options">
           <label className="check-label"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /> Remember me</label>
-          <Link to={portalRole ? `/${portalRole}/forgot-password` : '/forgot-password'} className="text-link">Forgot password?</Link>
+          <Link to={portalRole ? portalPath(portalRole, 'forgot-password') : '/forgot-password'} className="text-link">Forgot password?</Link>
         </div>
         <button className="button button-primary button-full" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'} <ArrowRight size={17} /></button>
       </form>
-      {portalRole !== 'admin' && <p className="auth-switch">New to Brightloop? <Link to="/customer/register" className="text-link">Create an account</Link></p>}
+      {portalRole === 'customer' && <p className="auth-switch">New to Brightloop? <Link to="/customer/register" className="text-link">Create an account</Link></p>}
     </AuthFrame>
   )
 }
@@ -209,7 +214,7 @@ export function RegisterPage() {
   )
 }
 
-export function ForgotPasswordPage({ portalRole }: { portalRole?: 'admin' | 'customer' } = {}) {
+export function ForgotPasswordPage({ portalRole }: { portalRole?: 'admin' | 'customer' | 'developer_team' } = {}) {
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
@@ -233,12 +238,12 @@ export function ForgotPasswordPage({ portalRole }: { portalRole?: 'admin' | 'cus
         <label className="field"><span>Email address</span><span className="input-wrap"><Mail size={17} /><input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@company.com" /></span></label>
         <button className="button button-primary button-full" disabled={busy}>{busy ? 'Sending…' : 'Send reset link'} <ArrowRight size={17} /></button>
       </form>
-      <p className="auth-switch"><Link to={portalRole ? `/${portalRole}/login` : '/account'} className="text-link"><ArrowLeft size={15} /> Back to sign in</Link></p>
+      <p className="auth-switch"><Link to={portalRole ? portalPath(portalRole, 'login') : '/account'} className="text-link"><ArrowLeft size={15} /> Back to sign in</Link></p>
     </AuthFrame>
   )
 }
 
-export function ResetPasswordPage({ portalRole }: { portalRole?: 'admin' | 'customer' } = {}) {
+export function ResetPasswordPage({ portalRole }: { portalRole?: 'admin' | 'customer' | 'developer_team' } = {}) {
   const navigate = useNavigate()
   const token = new URLSearchParams(useLocation().search).get('token') || ''
   const [password, setPassword] = useState('')
@@ -253,7 +258,7 @@ export function ResetPasswordPage({ portalRole }: { portalRole?: 'admin' | 'cust
     setBusy(true)
     try {
       await api.post('/auth/reset-password', { token, new_password: password })
-      navigate(portalRole ? `/${portalRole}/login` : '/account', { replace: true, state: { message: 'Your password was updated. Sign in with your new password.' } })
+      navigate(portalRole ? portalPath(portalRole, 'login') : '/account', { replace: true, state: { message: 'Your password was updated. Sign in with your new password.' } })
     } catch (requestError) { setError(getApiError(requestError)) }
     finally { setBusy(false) }
   }
@@ -265,7 +270,7 @@ export function ResetPasswordPage({ portalRole }: { portalRole?: 'admin' | 'cust
         <PasswordInput label="Confirm new password" value={confirm} onChange={setConfirm} autoComplete="new-password" />
         <button className="button button-primary button-full" disabled={busy}>{busy ? 'Updating…' : 'Update password'} <ArrowRight size={17} /></button>
       </form>
-      <p className="auth-switch"><Link to={portalRole ? `/${portalRole}/login` : '/account'} className="text-link"><ArrowLeft size={15} /> Back to sign in</Link></p>
+      <p className="auth-switch"><Link to={portalRole ? portalPath(portalRole, 'login') : '/account'} className="text-link"><ArrowLeft size={15} /> Back to sign in</Link></p>
     </AuthFrame>
   )
 }
@@ -279,11 +284,14 @@ const navigation: Record<UserRole, { label: string; path: string; icon: typeof L
   ],
   staff: [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { label: 'Customers', path: '/customers', icon: BriefcaseBusiness },
     { label: 'My profile', path: '/profile', icon: UserRound },
   ],
   customer: [
     { label: 'Dashboard', path: '/customer/dashboard', icon: LayoutDashboard },
+    { label: 'My profile', path: '/profile', icon: UserRound },
+  ],
+  developer_team: [
+    { label: 'Developer home', path: '/developer/dashboard', icon: LayoutDashboard },
     { label: 'My profile', path: '/profile', icon: UserRound },
   ],
 }
@@ -327,6 +335,7 @@ export function WorkspaceLayout() {
 
 function currentPageLabel() {
   const path = window.location.pathname
+  if (path.startsWith('/developer')) return 'Developer Team'
   if (path.startsWith('/staff')) return 'Staff management'
   if (path.includes('/customers/')) return 'Customer profile'
   if (path === '/customers') return 'Customers'
@@ -334,7 +343,7 @@ function currentPageLabel() {
   return 'Dashboard'
 }
 
-function roleLabel(role: UserRole) { return role.charAt(0).toUpperCase() + role.slice(1) }
+function roleLabel(role: UserRole) { return role.split('_').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ') }
 function initials(name: string) { return name.split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') }
 function dateLabel(date: string) { return new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) }
 
@@ -360,25 +369,40 @@ export function DashboardPage() {
         <div className="welcome-content"><span className="eyebrow eyebrow-gold">YOUR BRIGHTLOOP WORKSPACE</span><h2>Good relationships make good business.</h2><p>Keep your account and customer relationships in one considered place.</p><Link className="welcome-link" to="/profile">Manage your profile <ArrowRight size={16} /></Link></div>
         <div className="welcome-art" aria-hidden="true"><div className="art-ring art-ring-one" /><div className="art-ring art-ring-two" /><span className="art-star">✳</span><span className="art-dot" /></div>
       </section>
-      {user.role !== 'customer' ? (
+      {user.role === 'admin' ? (
         <section className="stats-grid">
           <StatCard label="Active customers" value={stats?.customers} icon={<BriefcaseBusiness size={19} />} tone="gold" />
-          {user.role === 'admin' && <StatCard label="Active staff" value={stats?.staff} icon={<UsersRound size={19} />} tone="green" />}
+          <StatCard label="Active staff" value={stats?.staff} icon={<UsersRound size={19} />} tone="green" />
           <div className="stat-card stat-card-note"><div className="stat-icon stat-icon-muted"><Activity size={19} /></div><div className="stat-label">Account status</div><div className="stat-bottom"><span className="status-dot" /> Active</div><div className="stat-foot">Your workspace is ready to go</div></div>
         </section>
-      ) : (
+      ) : user.role === 'customer' ? (
         <section className="customer-home-grid">
           <div className="content-card account-card"><div className="card-title-row"><div><span className="eyebrow">ACCOUNT</span><h3>Your account</h3></div><span className="status-badge status-active"><span /> Active</span></div><div className="account-details"><span className="avatar avatar-large">{initials(user.full_name)}</span><div><strong>{user.full_name}</strong><p>{user.email}</p><small>Customer account</small></div></div><Link to="/profile" className="button button-secondary">View account details <ArrowRight size={16} /></Link></div>
           <div className="content-card quiet-card"><ShieldCheck size={22} /><h3>Your details, thoughtfully kept.</h3><p>Update your contact information any time from your profile settings.</p><Link to="/profile" className="text-link">Edit your profile <ArrowRight size={15} /></Link></div>
         </section>
+      ) : (
+        <section className="customer-home-grid"><div className="content-card quiet-card"><ShieldCheck size={22} /><h3>Your staff workspace</h3><p>Manage your own profile details and access only the business features enabled for your role.</p><Link to="/profile" className="text-link">Edit your profile <ArrowRight size={15} /></Link></div></section>
       )}
-      <section className="section-heading"><div><span className="eyebrow">QUICK ACCESS</span><h2>Pick up where you left off</h2></div></section>
+      {user.role !== 'staff' && <section className="section-heading"><div><span className="eyebrow">QUICK ACCESS</span><h2>Pick up where you left off</h2></div></section>}
       <section className="quick-grid">
         {user.role === 'admin' && <QuickCard icon={<UsersRound size={20} />} title="Staff management" description="Manage your team and access." to="/staff" />}
-        {(user.role === 'admin' || user.role === 'staff') && <QuickCard icon={<BriefcaseBusiness size={20} />} title="Customer directory" description="View and manage customer records." to="/customers" />}
+        {user.role === 'admin' && <QuickCard icon={<BriefcaseBusiness size={20} />} title="Customer directory" description="View and manage customer records." to="/customers" />}
         <QuickCard icon={<UserRound size={20} />} title="Profile settings" description="Keep your personal details current." to="/profile" />
       </section>
-      {!stats && user.role !== 'customer' && <p className="data-note">Dashboard figures load directly from your account records.</p>}
+      {!stats && user.role === 'admin' && <p className="data-note">Dashboard figures load directly from your account records.</p>}
+    </div>
+  )
+}
+
+export function DeveloperDashboardPage() {
+  const { user } = useAuth()
+  if (!user) return null
+  return (
+    <div className="page">
+      <PageHeading eyebrow="DEVELOPER TEAM" title={`Welcome, ${user.full_name.split(' ')[0]}.`} description="This is your restricted developer workspace." />
+      <section className="customer-home-grid">
+        <div className="content-card quiet-card"><Code2 size={22} /><h3>Developer account</h3><p>Your access is limited to this portal and your own profile. No customer, staff, financial, subscription, or administrative records are available here.</p><Link to="/profile" className="text-link">Manage your profile <ArrowRight size={15} /></Link></div>
+      </section>
     </div>
   )
 }
@@ -510,7 +534,8 @@ function ManagementPage({ kind }: { kind: 'staff' | 'customer' }) {
     const action = item.is_active ? 'deactivate' : 'activate'
     if (!window.confirm(`Are you sure you want to ${action} ${item.full_name}?`)) return
     try {
-      await api.patch(`/users/${item.id}/status`, { is_active: !item.is_active })
+      const statusPath = customer ? `/customers/${item.id}/status` : `/users/${item.id}/status`
+      await api.patch(statusPath, { is_active: !item.is_active })
       await loadUsers()
     } catch (requestError) { setError(getApiError(requestError)) }
   }
@@ -521,7 +546,7 @@ function ManagementPage({ kind }: { kind: 'staff' | 'customer' }) {
       <section className="content-card directory-card">
         <div className="directory-toolbar"><div className="directory-summary"><strong>{users.length}</strong><span>{customer ? 'customer records' : 'team members'}</span></div><div className="directory-filters"><label className="search-field"><Search size={17} /><input aria-label={`Search ${kind}`} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={`Search ${kind}…`} /></label><select aria-label="Filter by status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div></div>
         {error && <Notice>{error}</Notice>}
-        {busy ? <div className="list-loading">Loading records…</div> : filtered.length ? <UserTable users={filtered} onStatus={customer ? undefined : toggleStatus} onEdit={customer ? undefined : setEditingStaff} onView={customer ? undefined : setViewingStaff} customer={customer} /> : <EmptyState title={users.length ? 'No matching records' : 'No records available yet.'} description={users.length ? 'Try another search or status filter.' : `When ${customer ? 'customers' : 'staff'} are added, they’ll appear here.`} />}
+        {busy ? <div className="list-loading">Loading records…</div> : filtered.length ? <UserTable users={filtered} onStatus={toggleStatus} onEdit={customer ? undefined : setEditingStaff} onView={customer ? undefined : setViewingStaff} customer={customer} /> : <EmptyState title={users.length ? 'No matching records' : 'No records available yet.'} description={users.length ? 'Try another search or status filter.' : `When ${customer ? 'customers' : 'staff'} are added, they’ll appear here.`} />}
       </section>
       <div className="directory-footnote"><ShieldCheck size={15} /> Account records are managed securely and visible according to your role.</div>
       {dialogOpen && <UserDialog kind={kind} onClose={() => setDialogOpen(false)} onCreated={() => { setDialogOpen(false); void loadUsers() }} />}

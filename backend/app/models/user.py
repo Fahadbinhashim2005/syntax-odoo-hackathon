@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from sqlalchemy import Boolean, DateTime, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, validates
 
 from app.database import Base
 
@@ -30,3 +30,9 @@ class User(Base):
         onupdate=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
+
+    @validates("role")
+    def validate_role(self, _key: str, value: str) -> str:
+        if value not in {"admin", "staff", "customer", "developer_team"}:
+            raise ValueError("Unsupported account role.")
+        return value

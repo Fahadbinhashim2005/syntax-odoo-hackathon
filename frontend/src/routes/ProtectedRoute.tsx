@@ -8,7 +8,7 @@ export function ProtectedRoute({ roles }: { roles?: UserRole[] }) {
   if (loading) return <div className="screen-loading">Loading your workspace…</div>
   if (!user) return <Navigate to={roles?.includes('admin') ? '/admin/login' : '/customer/login'} replace state={{ from: location.pathname }} />
   if (roles && !roles.includes(user.role)) {
-    const destination = user.role === 'admin' ? '/admin/dashboard' : user.role === 'customer' ? '/customer/dashboard' : '/dashboard'
+    const destination = user.role === 'admin' ? '/admin/dashboard' : user.role === 'customer' ? '/customer/dashboard' : user.role === 'developer_team' ? '/developer/dashboard' : '/dashboard'
     return <Navigate to={destination} replace />
   }
   if (user.role === 'admin' && user.must_change_password && location.pathname !== '/admin/change-password') {

@@ -50,6 +50,8 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(User.email == payload.email))
     if user is None or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email or password is incorrect.")
+    if user.role not in {"admin", "staff", "customer", "developer_team"}:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This account has no valid access role.")
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This account is deactivated.")
     return {"access_token": create_access_token(user.id), "user": user}
@@ -78,7 +80,7 @@ def forgot_password(payload: ForgotPassword, db: Session = Depends(get_db)):
     message["From"] = sender
     message["To"] = user.email
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
-    reset_path = "/admin/reset-password" if user.role == "admin" else "/customer/reset-password" if user.role == "customer" else "/reset-password"
+    reset_path = "/admin/reset-password" if user.role == "admin" else "/customer/reset-password" if user.role == "customer" else "/developer/reset-password" if user.role == "developer_team" else "/reset-password"
     message.set_content(
         f"Use this link within 30 minutes to reset your password:\n"
         f"{frontend_url.rstrip('/')}{reset_path}?token={reset_token}\n"

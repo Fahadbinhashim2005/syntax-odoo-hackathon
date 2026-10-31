@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+UserRole = Literal["admin", "staff", "customer", "developer_team"]
+
 
 def validate_email(value: str) -> str:
     email = value.strip().lower()
@@ -57,6 +59,26 @@ class UserCreate(BaseModel):
         return validate_email(value)
 
 
+class DeveloperCreate(BaseModel):
+    full_name: str = Field(min_length=2, max_length=120)
+    email: str
+    phone: str = Field(default="", max_length=32)
+    password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        return validate_email(value)
+
+    @field_validator("full_name")
+    @classmethod
+    def clean_name(cls, value: str) -> str:
+        value = value.strip()
+        if len(value) < 2:
+            raise ValueError("Full name must contain at least two characters.")
+        return value
+
+
 class UserUpdate(BaseModel):
     full_name: str | None = Field(default=None, min_length=2, max_length=120)
     phone: str | None = Field(default=None, max_length=32)
@@ -96,7 +118,7 @@ class UserResponse(BaseModel):
     phone: str
     company_name: str | None
     address: str | None
-    role: str
+    role: UserRole
     is_active: bool
     must_change_password: bool = False
     created_at: datetime

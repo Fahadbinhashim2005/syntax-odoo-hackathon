@@ -15,7 +15,7 @@ def dashboard_stats(
     user: User = Depends(require_roles("admin", "staff", "customer")),
     db: Session = Depends(get_db),
 ):
-    if user.role == "customer":
+    if user.role != "admin":
         return {"role": user.role}
     customers = db.scalar(
         select(func.count()).select_from(User).where(User.role == "customer", User.is_active.is_(True))

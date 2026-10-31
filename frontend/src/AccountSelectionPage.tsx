@@ -1,4 +1,4 @@
-import { ArrowRight, ShieldCheck, UsersRound } from 'lucide-react'
+import { ArrowRight, Code2, ShieldCheck, UsersRound } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { company } from './config/company'
 import './AccountSelectionPage.css'
@@ -31,6 +31,13 @@ export function AccountSelectionPage() {
             <p>Access your subscriptions, quotations, invoices and account.</p>
             <Link className="account-panel-button account-panel-button-gold" to="/customer/login">Customer Login <ArrowRight size={17} /></Link>
             <Link className="account-panel-register" to="/customer/register">New here? <b>Create an account</b></Link>
+          </article>
+          <article className="account-panel developer-panel">
+            <div className="account-panel-icon"><Code2 size={25} /></div>
+            <span className="account-panel-label">TECHNICAL ACCESS</span>
+            <h2>Developer Team</h2>
+            <p>Restricted workspace for provisioned members of the developer team.</p>
+            <Link className="account-panel-button account-panel-button-dark" to="/developer/login">Developer Login <ArrowRight size={17} /></Link>
           </article>
         </div>
         <p className="account-selection-note"><ShieldCheck size={15} /> Portal access is secured by your account permissions.</p>
