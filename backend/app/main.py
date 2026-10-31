@@ -2,10 +2,12 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import inspect, text
 
-from app.database import Base, engine
+from app.database import Base, SessionLocal, engine
 from app.models import User
 from app.routers import auth, dashboard, users
+from app.utils.initial_admin import seed_initial_admin
 
 app = FastAPI(
     title="Odoo Subscription Management API",
@@ -34,6 +36,10 @@ app.include_router(dashboard.router)
 @app.on_event("startup")
 def create_tables():
     Base.metadata.create_all(bind=engine)
+    if "must_change_password" not in {column["name"] for column in inspect(engine).get_columns("users")}:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE users ADD COLUMN must_change_password BOOLEAN NOT NULL DEFAULT 0"))
+    seed_initial_admin(SessionLocal)
 
 @app.get("/")
 def home():

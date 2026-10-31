@@ -1,7 +1,7 @@
 from typing import Annotated
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
@@ -17,6 +17,7 @@ DbSession = Annotated[Session, Depends(get_db)]
 def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
     db: DbSession,
+    request: Request,
 ) -> User:
     if credentials is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required.")
@@ -31,6 +32,10 @@ def get_current_user(
     user = db.get(User, user_id)
     if user is None or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="This account is unavailable.")
+    password_change_request = request.url.path == "/api/auth/change-password" and request.method == "POST"
+    profile_bootstrap_request = request.url.path == "/api/users/me" and request.method == "GET"
+    if user.must_change_password and not (password_change_request or profile_bootstrap_request):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Change your temporary password before continuing.")
     return user
 
 

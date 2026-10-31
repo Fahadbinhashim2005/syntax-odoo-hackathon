@@ -78,9 +78,10 @@ def forgot_password(payload: ForgotPassword, db: Session = Depends(get_db)):
     message["From"] = sender
     message["To"] = user.email
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    reset_path = "/admin/reset-password" if user.role == "admin" else "/customer/reset-password" if user.role == "customer" else "/reset-password"
     message.set_content(
         f"Use this link within 30 minutes to reset your password:\n"
-        f"{frontend_url.rstrip('/')}/reset-password?token={reset_token}\n"
+        f"{frontend_url.rstrip('/')}{reset_path}?token={reset_token}\n"
         "If you did not request this, you can ignore this email."
     )
     try:
@@ -110,6 +111,7 @@ def reset_password(payload: ResetPassword, db: Session = Depends(get_db)):
     if expires_at <= datetime.now(timezone.utc):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Reset link is invalid or expired.")
     user.hashed_password = hash_password(payload.new_password)
+    user.must_change_password = False
     user.reset_token_hash = None
     user.reset_token_expires_at = None
     db.commit()
@@ -124,6 +126,9 @@ def change_password(
 ):
     if not verify_password(payload.current_password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect.")
+    if user.must_change_password and verify_password(payload.new_password, user.hashed_password):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Choose a password different from the temporary password.")
     user.hashed_password = hash_password(payload.new_password)
+    user.must_change_password = False
     db.commit()
     return {"message": "Password updated successfully."}

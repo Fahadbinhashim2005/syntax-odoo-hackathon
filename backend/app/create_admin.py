@@ -1,6 +1,6 @@
 from getpass import getpass
 
-from sqlalchemy import select
+from sqlalchemy import inspect, select, text
 from sqlalchemy.exc import IntegrityError
 
 from app.database import Base, SessionLocal, engine
@@ -11,6 +11,9 @@ from app.utils.security import hash_password
 
 def main() -> None:
     Base.metadata.create_all(bind=engine)
+    if "must_change_password" not in {column["name"] for column in inspect(engine).get_columns("users")}:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE users ADD COLUMN must_change_password BOOLEAN NOT NULL DEFAULT 0"))
     with SessionLocal() as db:
         if db.scalar(select(User.id).where(User.role == "admin").limit(1)) is not None:
             raise SystemExit("An administrator already exists.")
@@ -37,6 +40,7 @@ def main() -> None:
                 hashed_password=hash_password(password),
                 role="admin",
                 is_active=True,
+                must_change_password=True,
             )
         )
         try:

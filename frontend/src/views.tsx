@@ -103,7 +103,7 @@ function AuthFrame({ children, title, subtitle }: { children: ReactNode; title: 
   )
 }
 
-export function LoginPage() {
+export function LoginPage({ portalRole }: { portalRole?: 'admin' | 'customer' } = {}) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(false)
@@ -115,7 +115,10 @@ export function LoginPage() {
   const successMessage = (location.state as { message?: string } | null)?.message
 
   useEffect(() => {
-    if (user) navigate('/dashboard', { replace: true })
+    if (user) {
+      const destination = user.must_change_password ? '/admin/change-password' : user.role === 'admin' ? '/admin/dashboard' : user.role === 'customer' ? '/customer/dashboard' : '/dashboard'
+      navigate(destination, { replace: true })
+    }
   }, [navigate, user])
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -124,8 +127,13 @@ export function LoginPage() {
     setBusy(true)
     try {
       const { data } = await api.post('/auth/login', { email, password })
+      if (portalRole && data.user.role !== portalRole) {
+        setError(portalRole === 'admin' ? 'This account does not have administrator access.' : 'This account is not a customer account. Use the appropriate portal.')
+        return
+      }
       signIn(data, remember)
-      navigate('/dashboard', { replace: true })
+      const destination = data.user.must_change_password ? '/admin/change-password' : data.user.role === 'admin' ? '/admin/dashboard' : data.user.role === 'customer' ? '/customer/dashboard' : '/dashboard'
+      navigate(destination, { replace: true })
     } catch (requestError) {
       setError(getApiError(requestError))
     } finally {
@@ -145,11 +153,11 @@ export function LoginPage() {
         <PasswordInput label="Password" value={password} onChange={setPassword} autoComplete="current-password" />
         <div className="form-options">
           <label className="check-label"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /> Remember me</label>
-          <Link to="/forgot-password" className="text-link">Forgot password?</Link>
+          <Link to={portalRole ? `/${portalRole}/forgot-password` : '/forgot-password'} className="text-link">Forgot password?</Link>
         </div>
         <button className="button button-primary button-full" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'} <ArrowRight size={17} /></button>
       </form>
-      <p className="auth-switch">New to Brightloop? <Link to="/register" className="text-link">Create an account</Link></p>
+      {portalRole !== 'admin' && <p className="auth-switch">New to Brightloop? <Link to="/customer/register" className="text-link">Create an account</Link></p>}
     </AuthFrame>
   )
 }
@@ -168,7 +176,7 @@ export function RegisterPage() {
     setBusy(true)
     try {
       await api.post('/auth/register', { full_name: form.full_name, email: form.email, phone: form.phone, password: form.password })
-      navigate('/login', { replace: true, state: { message: 'Your account is ready. Sign in to continue.' } })
+      navigate('/customer/login', { replace: true, state: { message: 'Your account is ready. Sign in to continue.' } })
     } catch (requestError) {
       setError(getApiError(requestError))
     } finally {
@@ -186,12 +194,12 @@ export function RegisterPage() {
         <PasswordInput label="Confirm password" value={form.confirm} onChange={(value) => update('confirm', value)} autoComplete="new-password" />
         <button className="button button-primary button-full" disabled={busy}>{busy ? 'Creating account…' : 'Create account'} <ArrowRight size={17} /></button>
       </form>
-      <p className="auth-switch">Already have an account? <Link to="/login" className="text-link">Sign in</Link></p>
+      <p className="auth-switch">Already have an account? <Link to="/customer/login" className="text-link">Sign in</Link></p>
     </AuthFrame>
   )
 }
 
-export function ForgotPasswordPage() {
+export function ForgotPasswordPage({ portalRole }: { portalRole?: 'admin' | 'customer' } = {}) {
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
@@ -215,12 +223,12 @@ export function ForgotPasswordPage() {
         <label className="field"><span>Email address</span><span className="input-wrap"><Mail size={17} /><input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@company.com" /></span></label>
         <button className="button button-primary button-full" disabled={busy}>{busy ? 'Sending…' : 'Send reset link'} <ArrowRight size={17} /></button>
       </form>
-      <p className="auth-switch"><Link to="/login" className="text-link"><ArrowLeft size={15} /> Back to sign in</Link></p>
+      <p className="auth-switch"><Link to={portalRole ? `/${portalRole}/login` : '/account'} className="text-link"><ArrowLeft size={15} /> Back to sign in</Link></p>
     </AuthFrame>
   )
 }
 
-export function ResetPasswordPage() {
+export function ResetPasswordPage({ portalRole }: { portalRole?: 'admin' | 'customer' } = {}) {
   const navigate = useNavigate()
   const token = new URLSearchParams(useLocation().search).get('token') || ''
   const [password, setPassword] = useState('')
@@ -235,7 +243,7 @@ export function ResetPasswordPage() {
     setBusy(true)
     try {
       await api.post('/auth/reset-password', { token, new_password: password })
-      navigate('/login', { replace: true, state: { message: 'Your password was updated. Sign in with your new password.' } })
+      navigate(portalRole ? `/${portalRole}/login` : '/account', { replace: true, state: { message: 'Your password was updated. Sign in with your new password.' } })
     } catch (requestError) { setError(getApiError(requestError)) }
     finally { setBusy(false) }
   }
@@ -247,14 +255,14 @@ export function ResetPasswordPage() {
         <PasswordInput label="Confirm new password" value={confirm} onChange={setConfirm} autoComplete="new-password" />
         <button className="button button-primary button-full" disabled={busy}>{busy ? 'Updating…' : 'Update password'} <ArrowRight size={17} /></button>
       </form>
-      <p className="auth-switch"><Link to="/login" className="text-link"><ArrowLeft size={15} /> Back to sign in</Link></p>
+      <p className="auth-switch"><Link to={portalRole ? `/${portalRole}/login` : '/account'} className="text-link"><ArrowLeft size={15} /> Back to sign in</Link></p>
     </AuthFrame>
   )
 }
 
 const navigation: Record<UserRole, { label: string; path: string; icon: typeof LayoutDashboard }[]> = {
   admin: [
-    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
     { label: 'Staff management', path: '/staff', icon: UsersRound },
     { label: 'Customers', path: '/customers', icon: BriefcaseBusiness },
     { label: 'My profile', path: '/profile', icon: UserRound },
@@ -265,7 +273,7 @@ const navigation: Record<UserRole, { label: string; path: string; icon: typeof L
     { label: 'My profile', path: '/profile', icon: UserRound },
   ],
   customer: [
-    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { label: 'Dashboard', path: '/customer/dashboard', icon: LayoutDashboard },
     { label: 'My profile', path: '/profile', icon: UserRound },
   ],
 }
@@ -284,7 +292,7 @@ export function WorkspaceLayout() {
         <nav className="side-nav">
           {navigation[user.role].map(({ label, path, icon: Icon }) => (
             <NavLink key={path} to={path} onClick={() => setMenuOpen(false)} className={(state: { isActive: boolean }) => `nav-item ${state.isActive ? 'nav-item-active' : ''}`}>
-              <Icon size={18} strokeWidth={1.8} /><span>{label}</span>{path === '/dashboard' && <span className="nav-indicator" />}
+              <Icon size={18} strokeWidth={1.8} /><span>{label}</span>{label === 'Dashboard' && <span className="nav-indicator" />}
             </NavLink>
           ))}
         </nav>
@@ -597,6 +605,47 @@ export function ProfilePage() {
           <form className="content-card edit-card" onSubmit={saveProfile}><div className="card-title-row"><div><span className="eyebrow">PERSONAL INFORMATION</span><h3>Profile details</h3></div><UserRound size={19} /></div><div className="edit-grid"><label className="field"><span>Full name</span><input className="plain-input" required minLength={2} maxLength={120} value={form.full_name} onChange={(event) => setForm({ ...form, full_name: event.target.value })} /></label><label className="field"><span>Email address</span><input className="plain-input input-readonly" readOnly value={user.email} /></label><label className="field"><span>Phone number</span><input className="plain-input" maxLength={32} value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>{user.role === 'customer' && <><label className="field"><span>Company <small>Optional</small></span><input className="plain-input" value={form.company_name} onChange={(event) => setForm({ ...form, company_name: event.target.value })} /></label><label className="field field-wide"><span>Address <small>Optional</small></span><textarea className="plain-input" rows={3} value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} /></label></>}</div><div className="form-footer"><span>Role and account permissions are managed by an administrator.</span><button className="button button-primary" disabled={busy}>Save changes <Check size={16} /></button></div></form>
           <form className="content-card edit-card" onSubmit={changePassword}><div className="card-title-row"><div><span className="eyebrow">SECURITY</span><h3>Change password</h3></div><LockKeyhole size={19} /></div><div className="edit-grid"><label className="field"><span>Current password</span><input className="plain-input" type="password" required value={passwords.current_password} onChange={(event) => setPasswords({ ...passwords, current_password: event.target.value })} /></label><label className="field"><span>New password</span><input className="plain-input" type="password" required minLength={8} maxLength={128} value={passwords.new_password} onChange={(event) => setPasswords({ ...passwords, new_password: event.target.value })} /></label><label className="field"><span>Confirm new password</span><input className="plain-input" type="password" required minLength={8} value={passwords.confirm} onChange={(event) => setPasswords({ ...passwords, confirm: event.target.value })} /></label></div><div className="form-footer"><span>Choose at least eight characters.</span><button className="button button-secondary" disabled={busy}>Update password <ArrowDownRight size={16} /></button></div></form>
         </div>
+      </section>
+    </div>
+  )
+}
+
+export function InitialPasswordChangePage() {
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const { refreshProfile } = useAuth()
+  const navigate = useNavigate()
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError('')
+    if (newPassword !== confirmPassword) return setError('Your passwords do not match.')
+    setBusy(true)
+    try {
+      await api.post('/auth/change-password', { current_password: currentPassword, new_password: newPassword })
+      await refreshProfile()
+      navigate('/admin/dashboard', { replace: true })
+    } catch (requestError) {
+      setError(getApiError(requestError))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="page">
+      <PageHeading eyebrow="SECURITY" title="Choose a new password" description="For your security, update the temporary administrator password before continuing." />
+      <section className="content-card edit-card" style={{ maxWidth: 620 }}>
+        {error && <Notice>{error}</Notice>}
+        <form className="auth-form" onSubmit={submit}>
+          <label className="field"><span>Current temporary password</span><input className="plain-input" type="password" required minLength={8} maxLength={128} autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} /></label>
+          <label className="field"><span>New password</span><input className="plain-input" type="password" required minLength={8} maxLength={128} autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></label>
+          <label className="field"><span>Confirm new password</span><input className="plain-input" type="password" required minLength={8} maxLength={128} autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /></label>
+          <button className="button button-primary" disabled={busy}>{busy ? 'Updating…' : 'Update password'} <ArrowRight size={16} /></button>
+        </form>
       </section>
     </div>
   )
